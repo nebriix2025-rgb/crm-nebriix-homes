@@ -24,6 +24,9 @@ import {
   TrendingUp,
   ArrowRight,
   Sparkles,
+  Phone,
+  Mail,
+  DollarSign,
 } from 'lucide-react';
 import { formatRelativeTime, getInitials } from '@/lib/utils';
 
@@ -41,14 +44,35 @@ const statusLabels: Record<string, string> = {
   rented: 'Rented',
 };
 
+const leadStatusColors: Record<string, string> = {
+  new: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  contacted: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
+  qualified: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+  viewing_scheduled: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+  negotiating: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+  won: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+  lost: 'bg-red-500/20 text-red-400 border-red-500/30',
+};
+
+const leadStatusLabels: Record<string, string> = {
+  new: 'New',
+  contacted: 'Contacted',
+  qualified: 'Qualified',
+  viewing_scheduled: 'Viewing',
+  negotiating: 'Negotiating',
+  won: 'Won',
+  lost: 'Lost',
+};
+
 export function DashboardPage() {
   const { user, isAdmin } = useAuth();
-  const { getStats, getPropertiesForUser, getActivitiesForUser } = useAppStore();
+  const { getStats, getPropertiesForUser, getActivitiesForUser, getLeadsForUser } = useAppStore();
   const stats = getStats(isAdmin);
 
   // Get data based on user role - users only see their own data
   const properties = user ? getPropertiesForUser(user.id, isAdmin) : [];
   const activities = user ? getActivitiesForUser(user.id, isAdmin) : [];
+  const leads = user ? getLeadsForUser(user.id, isAdmin) : [];
 
   // Commission Calculator state
   const [salePrice, setSalePrice] = useState<string>('1000000');
@@ -57,6 +81,7 @@ export function DashboardPage() {
 
   const recentProperties = properties.slice(0, 4);
   const recentActivities = activities.slice(0, 6);
+  const recentLeads = leads.filter(l => !['won', 'lost', 'archived'].includes(l.status)).slice(0, 4);
 
   const statCards = [
     {
@@ -281,6 +306,76 @@ export function DashboardPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Recent Leads Section */}
+        <Card className="bg-card border-border gold-border overflow-hidden">
+          <CardHeader className="pb-3 flex flex-row items-center justify-between">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-accent/10">
+                <UserCheck className="h-5 w-5 text-accent" />
+              </div>
+              Recent Leads
+            </CardTitle>
+            <Link to="/dashboard/leads">
+              <Button variant="ghost" size="sm" className="text-accent hover:text-accent/80 gap-1">
+                View All <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+          </CardHeader>
+          <CardContent>
+            {recentLeads.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <UserCheck className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                <p>No active leads</p>
+              </div>
+            ) : (
+              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+                {recentLeads.map((lead) => (
+                  <div
+                    key={lead.id}
+                    className="p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-all duration-200 border border-transparent hover:border-accent/20 cursor-pointer group"
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <Avatar className="h-10 w-10 border-2 border-accent/20">
+                        <AvatarFallback className="bg-gradient-to-br from-accent/20 to-accent/5 text-accent text-sm font-semibold">
+                          {getInitials(lead.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <Badge className={`shrink-0 text-xs ${leadStatusColors[lead.status] || 'bg-gray-500/20 text-gray-400'}`}>
+                        {leadStatusLabels[lead.status] || lead.status}
+                      </Badge>
+                    </div>
+                    <p className="font-semibold truncate group-hover:text-accent transition-colors">{lead.name}</p>
+                    <div className="space-y-1 mt-2 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1 truncate">
+                        <Mail className="h-3 w-3 shrink-0" />
+                        <span className="truncate">{lead.email}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Phone className="h-3 w-3 shrink-0" />
+                        {lead.phone}
+                      </div>
+                      {(lead.budget_min || lead.budget_max) && (
+                        <div className="flex items-center gap-1">
+                          <DollarSign className="h-3 w-3 shrink-0" />
+                          {lead.budget_min && lead.budget_max
+                            ? `${formatPrice(lead.budget_min)} - ${formatPrice(lead.budget_max)}`
+                            : lead.budget_max
+                            ? `Up to ${formatPrice(lead.budget_max)}`
+                            : `From ${formatPrice(lead.budget_min!)}`}
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {formatRelativeTime(lead.created_at)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Bottom Row: Commission Calculator & Account Settings */}
         <div className="grid gap-6 lg:grid-cols-2">

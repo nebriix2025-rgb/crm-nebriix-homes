@@ -41,6 +41,7 @@ import {
   MoreHorizontal,
   Pencil,
   Trash2,
+  Eye,
 } from 'lucide-react';
 import type { DealStatus, Deal } from '@/types';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -96,8 +97,10 @@ export function DealsPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [editingDeal, setEditingDeal] = useState<Deal | null>(null);
   const [deletingDeal, setDeletingDeal] = useState<Deal | null>(null);
+  const [viewingDeal, setViewingDeal] = useState<Deal | null>(null);
   const [formData, setFormData] = useState<DealFormData>(initialFormData);
 
   const salesUsers = users.filter(u => u.role === 'user' || u.role === 'admin');
@@ -211,6 +214,11 @@ export function DealsPage() {
   const openDeleteDialog = (deal: Deal) => {
     setDeletingDeal(deal);
     setIsDeleteDialogOpen(true);
+  };
+
+  const openViewDialog = (deal: Deal) => {
+    setViewingDeal(deal);
+    setIsViewDialogOpen(true);
   };
 
   const handleDeleteDeal = () => {
@@ -462,6 +470,10 @@ export function DealsPage() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => openViewDialog(deal)}>
+                                  <Eye className="h-4 w-4 mr-2" />
+                                  View Details
+                                </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => openEditDialog(deal)}>
                                   <Pencil className="h-4 w-4 mr-2" />
                                   Edit Deal
@@ -621,6 +633,144 @@ export function DealsPage() {
               onClick={handleDeleteDeal}
             >
               Cancel Deal
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Deal Details Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Handshake className="h-5 w-5 text-accent" />
+              Deal Details
+            </DialogTitle>
+          </DialogHeader>
+          {viewingDeal && (
+            <div className="space-y-6">
+              {/* Deal Status */}
+              <div className="flex items-center justify-between">
+                <Badge className={`${statusColors[viewingDeal.status]} text-sm px-3 py-1`}>
+                  {statusLabels[viewingDeal.status]}
+                </Badge>
+                <p className="text-sm text-muted-foreground">
+                  Created {formatDate(viewingDeal.created_at)}
+                </p>
+              </div>
+
+              {/* Property Info */}
+              <div className="p-4 rounded-lg bg-muted/30 border border-border">
+                <h4 className="font-semibold mb-3 flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-accent" />
+                  Property
+                </h4>
+                <div className="space-y-2">
+                  <p className="text-lg font-medium">{viewingDeal.property?.title || 'Unknown Property'}</p>
+                  {viewingDeal.property?.location && (
+                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                      <MapPin className="h-4 w-4" />
+                      {viewingDeal.property.location}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Client Info */}
+              {viewingDeal.lead && (
+                <div className="p-4 rounded-lg bg-muted/30 border border-border">
+                  <h4 className="font-semibold mb-3 flex items-center gap-2">
+                    <User className="h-4 w-4 text-accent" />
+                    Client
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Name</p>
+                      <p className="font-medium">{viewingDeal.lead.name}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Email</p>
+                      <p className="font-medium">{viewingDeal.lead.email}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Phone</p>
+                      <p className="font-medium">{viewingDeal.lead.phone}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Source</p>
+                      <p className="font-medium">{viewingDeal.lead.source}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Financial Details */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 rounded-lg bg-accent/10 border border-accent/20">
+                  <div className="flex items-center gap-2 mb-1">
+                    <DollarSign className="h-4 w-4 text-accent" />
+                    <p className="text-sm text-muted-foreground">Deal Value</p>
+                  </div>
+                  <p className="text-2xl font-bold text-accent">{formatPrice(viewingDeal.deal_value)}</p>
+                </div>
+                <div className="p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Percent className="h-4 w-4 text-emerald-400" />
+                    <p className="text-sm text-muted-foreground">Commission ({viewingDeal.commission_rate}%)</p>
+                  </div>
+                  <p className="text-2xl font-bold text-emerald-400">{formatPrice(viewingDeal.commission_amount)}</p>
+                </div>
+              </div>
+
+              {/* Closer Info */}
+              <div className="p-4 rounded-lg bg-muted/30 border border-border">
+                <h4 className="font-semibold mb-3">Assigned Agent (Closer)</h4>
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10">
+                    <AvatarFallback className="bg-accent/20 text-accent">
+                      {viewingDeal.closer ? getInitials(viewingDeal.closer.full_name) : 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-medium">{viewingDeal.closer?.full_name || 'Unassigned'}</p>
+                    <p className="text-sm text-muted-foreground">{viewingDeal.closer?.email}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Notes */}
+              {viewingDeal.notes && (
+                <div>
+                  <h4 className="font-semibold mb-2">Notes</h4>
+                  <p className="text-muted-foreground p-3 rounded-lg bg-muted/30">{viewingDeal.notes}</p>
+                </div>
+              )}
+
+              {/* Timestamps */}
+              <div className="pt-4 border-t border-border text-sm text-muted-foreground space-y-1">
+                <p><span className="font-medium">Created:</span> {formatDate(viewingDeal.created_at)}</p>
+                {viewingDeal.closed_at && (
+                  <p><span className="font-medium">Closed:</span> {formatDate(viewingDeal.closed_at)}</p>
+                )}
+                {isAdmin && viewingDeal.created_by && (
+                  <p><span className="font-medium">Created by:</span> {getUserById(viewingDeal.created_by)?.full_name || 'Unknown'}</p>
+                )}
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
+              Close
+            </Button>
+            <Button
+              onClick={() => {
+                setIsViewDialogOpen(false);
+                if (viewingDeal) openEditDialog(viewingDeal);
+              }}
+              className="bg-accent text-accent-foreground hover:bg-accent/90"
+            >
+              <Pencil className="h-4 w-4 mr-2" />
+              Edit Deal
             </Button>
           </DialogFooter>
         </DialogContent>

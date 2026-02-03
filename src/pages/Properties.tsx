@@ -100,7 +100,9 @@ export function PropertiesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
+  const [viewingProperty, setViewingProperty] = useState<Property | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -259,6 +261,11 @@ export function PropertiesPage() {
       owner_phone: property.owner_phone || '',
     });
     setIsEditDialogOpen(true);
+  };
+
+  const openViewDialog = (property: Property) => {
+    setViewingProperty(property);
+    setIsViewDialogOpen(true);
   };
 
   const handleDeleteProperty = (id: string) => {
@@ -645,6 +652,193 @@ export function PropertiesPage() {
           </DialogContent>
         </Dialog>
 
+        {/* View Details Dialog */}
+        <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+          <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Building2 className="h-5 w-5 text-accent" />
+                {viewingProperty?.title}
+              </DialogTitle>
+              <DialogDescription>
+                Property details and media
+              </DialogDescription>
+            </DialogHeader>
+            {viewingProperty && (
+              <div className="space-y-6">
+                {/* Property Header */}
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge className={statusColors[viewingProperty.status]}>
+                        {statusLabels[viewingProperty.status]}
+                      </Badge>
+                      <Badge variant="outline">{typeLabels[viewingProperty.type]}</Badge>
+                    </div>
+                    <div className="flex items-center gap-1 text-muted-foreground">
+                      <MapPin className="h-4 w-4" />
+                      {viewingProperty.location}
+                    </div>
+                  </div>
+                  <p className="text-2xl font-bold text-accent">{formatPrice(viewingProperty.price)}</p>
+                </div>
+
+                {/* Property Details Grid */}
+                <div className="grid grid-cols-3 gap-4">
+                  {viewingProperty.bedrooms && (
+                    <div className="p-3 rounded-lg bg-muted/50 text-center">
+                      <Bed className="h-5 w-5 mx-auto mb-1 text-accent" />
+                      <p className="text-lg font-semibold">{viewingProperty.bedrooms}</p>
+                      <p className="text-xs text-muted-foreground">Bedrooms</p>
+                    </div>
+                  )}
+                  {viewingProperty.bathrooms && (
+                    <div className="p-3 rounded-lg bg-muted/50 text-center">
+                      <Bath className="h-5 w-5 mx-auto mb-1 text-accent" />
+                      <p className="text-lg font-semibold">{viewingProperty.bathrooms}</p>
+                      <p className="text-xs text-muted-foreground">Bathrooms</p>
+                    </div>
+                  )}
+                  <div className="p-3 rounded-lg bg-muted/50 text-center">
+                    <Maximize2 className="h-5 w-5 mx-auto mb-1 text-accent" />
+                    <p className="text-lg font-semibold">{viewingProperty.area_sqft.toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground">Sq Ft</p>
+                  </div>
+                </div>
+
+                {/* Description */}
+                {viewingProperty.description && (
+                  <div>
+                    <h4 className="font-semibold mb-2">Description</h4>
+                    <p className="text-muted-foreground">{viewingProperty.description}</p>
+                  </div>
+                )}
+
+                {/* Owner Info */}
+                {(viewingProperty.owner_name || viewingProperty.owner_phone) && (
+                  <div className="p-4 rounded-lg bg-muted/30 border border-border">
+                    <h4 className="font-semibold mb-2">Owner Information</h4>
+                    <div className="space-y-1 text-sm">
+                      {viewingProperty.owner_name && (
+                        <p><span className="text-muted-foreground">Name:</span> {viewingProperty.owner_name}</p>
+                      )}
+                      {viewingProperty.owner_phone && (
+                        <p><span className="text-muted-foreground">Phone:</span> {viewingProperty.owner_phone}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Media Section */}
+                {((viewingProperty.images && viewingProperty.images.length > 0) ||
+                  (viewingProperty.videos && viewingProperty.videos.length > 0) ||
+                  (viewingProperty.documents && viewingProperty.documents.length > 0)) && (
+                  <div className="space-y-4">
+                    <h4 className="font-semibold">Property Media</h4>
+
+                    {/* Images */}
+                    {viewingProperty.images && viewingProperty.images.length > 0 && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Image className="h-4 w-4 text-accent" />
+                          <span className="text-sm font-medium">Images ({viewingProperty.images.length})</span>
+                        </div>
+                        <div className="grid grid-cols-4 gap-2">
+                          {viewingProperty.images.map((img, idx) => (
+                            <div key={idx} className="aspect-square rounded-lg overflow-hidden bg-muted">
+                              <img src={img} alt={`Property ${idx + 1}`} className="w-full h-full object-cover" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Videos */}
+                    {viewingProperty.videos && viewingProperty.videos.length > 0 && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Video className="h-4 w-4 text-blue-400" />
+                          <span className="text-sm font-medium">Videos ({viewingProperty.videos.length})</span>
+                        </div>
+                        <div className="space-y-2">
+                          {viewingProperty.videos.map((vid) => (
+                            <div key={vid.id} className="flex items-center gap-3 p-2 rounded-lg bg-muted/50">
+                              <Video className="h-5 w-5 text-blue-400" />
+                              <div className="flex-1">
+                                <p className="text-sm">{vid.name}</p>
+                                <p className="text-xs text-muted-foreground">{formatFileSize(vid.size)}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Documents */}
+                    {viewingProperty.documents && viewingProperty.documents.length > 0 && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <FileText className="h-4 w-4 text-red-400" />
+                          <span className="text-sm font-medium">Documents ({viewingProperty.documents.length})</span>
+                        </div>
+                        <div className="space-y-2">
+                          {viewingProperty.documents.map((doc) => (
+                            <div key={doc.id} className="flex items-center gap-3 p-2 rounded-lg bg-muted/50">
+                              <FileText className="h-5 w-5 text-red-400" />
+                              <div className="flex-1">
+                                <p className="text-sm">{doc.name}</p>
+                                <p className="text-xs text-muted-foreground">{formatFileSize(doc.size)}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Created Info */}
+                {isAdmin && viewingProperty.created_by && (
+                  <div className="pt-4 border-t border-border flex items-center gap-2 text-sm text-muted-foreground">
+                    {(() => {
+                      const creator = getUserById(viewingProperty.created_by);
+                      return (
+                        <>
+                          <Avatar className="h-6 w-6">
+                            <AvatarFallback className="text-xs bg-accent/20 text-accent">
+                              {creator ? getInitials(creator.full_name) : 'U'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span>
+                            Created by {creator?.full_name || 'Unknown'}
+                            <span className="mx-1">•</span>
+                            {formatRelativeTime(viewingProperty.created_at)}
+                          </span>
+                        </>
+                      );
+                    })()}
+                  </div>
+                )}
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
+                Close
+              </Button>
+              <Button
+                onClick={() => {
+                  setIsViewDialogOpen(false);
+                  if (viewingProperty) openEditDialog(viewingProperty);
+                }}
+                className="bg-accent text-accent-foreground hover:bg-accent/90"
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Property
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {/* Properties Grid */}
         {filteredProperties.length === 0 ? (
           <Card className="bg-card border-border">
@@ -684,7 +878,7 @@ export function PropertiesPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openViewDialog(property)}>
                           <Eye className="h-4 w-4 mr-2" />
                           View Details
                         </DropdownMenuItem>
@@ -756,7 +950,7 @@ export function PropertiesPage() {
 
                   <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
                     <p className="text-xl font-bold text-accent">{formatPrice(property.price)}</p>
-                    <Button size="sm" variant="outline">
+                    <Button size="sm" variant="outline" onClick={() => openViewDialog(property)}>
                       View Details
                     </Button>
                   </div>

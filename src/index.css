@@ -10,29 +10,29 @@
     --background: 40 33% 98%;
     --foreground: 213 50% 15%;
 
-    --card: 40 33% 100%;
+    --card: 0 0% 100%;
     --card-foreground: 213 50% 15%;
 
-    --popover: 40 33% 100%;
+    --popover: 0 0% 100%;
     --popover-foreground: 213 50% 15%;
 
     --primary: 213 50% 24%;
-    --primary-foreground: 40 33% 98%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 40 33% 96%;
-    --secondary-foreground: 213 50% 24%;
+    --secondary: 213 15% 94%;
+    --secondary-foreground: 213 50% 20%;
 
-    --muted: 40 20% 94%;
-    --muted-foreground: 213 30% 45%;
+    --muted: 213 15% 92%;
+    --muted-foreground: 213 30% 40%;
 
-    --accent: 43 70% 53%;
-    --accent-foreground: 213 50% 15%;
+    --accent: 43 70% 50%;
+    --accent-foreground: 213 50% 10%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 213 20% 88%;
-    --input: 213 20% 88%;
+    --border: 213 25% 82%;
+    --input: 213 25% 82%;
     --ring: 43 70% 53%;
 
     --radius: 0.625rem;
@@ -46,23 +46,23 @@
 
   .dark {
     /* Navy & Gold Premium Theme - Dark Mode */
-    --background: 213 50% 10%;
-    --foreground: 40 33% 95%;
+    --background: 213 50% 8%;
+    --foreground: 0 0% 95%;
 
-    --card: 213 40% 15%;
-    --card-foreground: 40 33% 95%;
+    --card: 213 45% 12%;
+    --card-foreground: 0 0% 95%;
 
-    --popover: 213 40% 15%;
-    --popover-foreground: 40 33% 95%;
+    --popover: 213 45% 12%;
+    --popover-foreground: 0 0% 95%;
 
     --primary: 43 70% 53%;
     --primary-foreground: 213 50% 10%;
 
-    --secondary: 213 40% 20%;
-    --secondary-foreground: 40 33% 95%;
+    --secondary: 213 40% 18%;
+    --secondary-foreground: 0 0% 90%;
 
-    --muted: 213 35% 25%;
-    --muted-foreground: 40 20% 70%;
+    --muted: 213 35% 20%;
+    --muted-foreground: 0 0% 65%;
 
     --accent: 43 70% 53%;
     --accent-foreground: 213 50% 10%;
@@ -70,15 +70,15 @@
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 213 35% 25%;
-    --input: 213 35% 25%;
+    --border: 213 35% 22%;
+    --input: 213 30% 20%;
     --ring: 43 70% 53%;
 
     /* Sidebar - Darker Navy */
-    --sidebar-background: 213 55% 8%;
-    --sidebar-foreground: 40 33% 95%;
+    --sidebar-background: 213 55% 6%;
+    --sidebar-foreground: 0 0% 95%;
     --sidebar-accent: 43 70% 53%;
-    --sidebar-border: 213 45% 18%;
+    --sidebar-border: 213 45% 15%;
   }
 }
 
