@@ -116,6 +116,8 @@ const DEMO_PROPERTIES: Property[] = [
   },
 ];
 
+// Demo leads - all created by admin only, not assigned to any user by default
+// This ensures new users start with a clean dashboard
 const DEMO_LEADS: Lead[] = [
   {
     id: '1',
@@ -129,8 +131,8 @@ const DEMO_LEADS: Lead[] = [
     preferred_type: 'penthouse',
     preferred_location: 'Dubai Marina',
     notes: 'Looking for high-floor unit with sea view',
-    assigned_to: '2',
-    created_by: '2',
+    assigned_to: undefined, // Not assigned - admin only
+    created_by: '1', // Created by admin
     created_at: new Date(Date.now() - 2 * 3600000).toISOString(),
     updated_at: new Date(Date.now() - 2 * 3600000).toISOString(),
   },
@@ -146,8 +148,8 @@ const DEMO_LEADS: Lead[] = [
     preferred_type: 'villa',
     preferred_location: 'Palm Jumeirah',
     notes: 'Cash buyer, ready to move quickly',
-    assigned_to: '3',
-    created_by: '1',
+    assigned_to: undefined, // Not assigned - admin only
+    created_by: '1', // Created by admin
     created_at: new Date(Date.now() - 24 * 3600000).toISOString(),
     updated_at: new Date(Date.now() - 12 * 3600000).toISOString(),
   },
@@ -163,8 +165,8 @@ const DEMO_LEADS: Lead[] = [
     preferred_type: 'apartment',
     preferred_location: 'Downtown Dubai',
     notes: 'Investment property, wants high ROI',
-    assigned_to: '2',
-    created_by: '2',
+    assigned_to: undefined, // Not assigned - admin only
+    created_by: '1', // Created by admin
     created_at: new Date(Date.now() - 48 * 3600000).toISOString(),
     updated_at: new Date(Date.now() - 24 * 3600000).toISOString(),
   },
@@ -180,8 +182,8 @@ const DEMO_LEADS: Lead[] = [
     preferred_type: 'townhouse',
     preferred_location: 'Arabian Ranches',
     notes: 'Family with 3 kids, needs good schools nearby',
-    assigned_to: '3',
-    created_by: '3',
+    assigned_to: undefined, // Not assigned - admin only
+    created_by: '1', // Created by admin
     created_at: new Date(Date.now() - 72 * 3600000).toISOString(),
     updated_at: new Date(Date.now() - 6 * 3600000).toISOString(),
   },
@@ -197,13 +199,14 @@ const DEMO_LEADS: Lead[] = [
     preferred_type: 'penthouse',
     preferred_location: 'Dubai Marina',
     notes: 'Negotiating on unit 1, interested in marina penthouse',
-    assigned_to: '2',
-    created_by: '2',
+    assigned_to: undefined, // Not assigned - admin only
+    created_by: '1', // Created by admin
     created_at: new Date(Date.now() - 96 * 3600000).toISOString(),
     updated_at: new Date(Date.now() - 3 * 3600000).toISOString(),
   },
 ];
 
+// Demo deals - all created by admin only to ensure new users start with clean dashboards
 const DEMO_DEALS: Deal[] = [
   {
     id: '1',
@@ -213,8 +216,8 @@ const DEMO_DEALS: Deal[] = [
     commission_rate: 2,
     commission_amount: 64000,
     status: 'closed',
-    closer_id: '2',
-    created_by: '2',
+    closer_id: '1', // Admin is the closer
+    created_by: '1', // Created by admin
     closed_at: new Date(Date.now() - 48 * 3600000).toISOString(),
     notes: 'Smooth transaction, client very happy',
     created_at: new Date(Date.now() - 72 * 3600000).toISOString(),
@@ -228,8 +231,8 @@ const DEMO_DEALS: Deal[] = [
     commission_rate: 1.5,
     commission_amount: 375000,
     status: 'in_progress',
-    closer_id: '3',
-    created_by: '3',
+    closer_id: '1', // Admin is the closer
+    created_by: '1', // Created by admin
     notes: 'Under negotiation, client reviewing contract',
     created_at: new Date(Date.now() - 24 * 3600000).toISOString(),
     updated_at: new Date(Date.now() - 6 * 3600000).toISOString(),
@@ -242,34 +245,34 @@ const DEMO_DEALS: Deal[] = [
     commission_rate: 2,
     commission_amount: 170000,
     status: 'pending',
-    closer_id: '2',
-    created_by: '2',
+    closer_id: '1', // Admin is the closer
+    created_by: '1', // Created by admin
     notes: 'Initial offer submitted, awaiting response',
     created_at: new Date(Date.now() - 6 * 3600000).toISOString(),
     updated_at: new Date(Date.now() - 3 * 3600000).toISOString(),
   },
 ];
 
+// Demo activities - only admin activities to ensure new users start with clean activity feeds
 const DEMO_ACTIVITIES: Activity[] = [
-  { id: '1', user_id: '2', action: 'lead_added', entity_type: 'lead', entity_id: '1', entity_name: 'James Wilson', created_at: new Date(Date.now() - 2 * 3600000).toISOString() },
-  { id: '2', user_id: '2', action: 'deal_closed', entity_type: 'deal', entity_id: '1', entity_name: 'Downtown Boulevard Apartment', metadata: { value: 3200000 }, created_at: new Date(Date.now() - 48 * 3600000).toISOString() },
+  { id: '1', user_id: '1', action: 'lead_added', entity_type: 'lead', entity_id: '1', entity_name: 'James Wilson', created_at: new Date(Date.now() - 2 * 3600000).toISOString() },
+  { id: '2', user_id: '1', action: 'deal_closed', entity_type: 'deal', entity_id: '1', entity_name: 'Downtown Boulevard Apartment', metadata: { value: 3200000 }, created_at: new Date(Date.now() - 48 * 3600000).toISOString() },
   { id: '3', user_id: '1', action: 'property_added', entity_type: 'property', entity_id: '6', entity_name: 'Emirates Hills Mansion', created_at: new Date(Date.now() - 72 * 3600000).toISOString() },
-  { id: '4', user_id: '3', action: 'lead_added', entity_type: 'lead', entity_id: '4', entity_name: 'Elena Rodriguez', created_at: new Date(Date.now() - 72 * 3600000).toISOString() },
-  { id: '5', user_id: '2', action: 'login', entity_type: 'user', entity_id: '2', entity_name: 'Sarah Thompson', created_at: new Date(Date.now() - 4 * 3600000).toISOString() },
+  { id: '4', user_id: '1', action: 'lead_added', entity_type: 'lead', entity_id: '4', entity_name: 'Elena Rodriguez', created_at: new Date(Date.now() - 72 * 3600000).toISOString() },
 ];
 
-// Initial audit log entries
+// Initial audit log entries - all admin actions to demonstrate audit logging
+// New users will not see any activity that wasn't created by them
 const DEMO_AUDIT_LOGS: AuditLog[] = [
   { id: '1', user_id: '1', action: 'user_created', entity_type: 'user', entity_id: '2', new_value: { full_name: 'Sarah Thompson', email: 'user@nebriix.com', role: 'user' }, created_at: '2024-02-20T10:00:00Z' },
   { id: '2', user_id: '1', action: 'user_created', entity_type: 'user', entity_id: '3', new_value: { full_name: 'John Smith', email: 'john@nebriix.com', role: 'user' }, created_at: '2024-03-10T10:00:00Z' },
   { id: '3', user_id: '1', action: 'property_added', entity_type: 'property', entity_id: '1', new_value: { title: 'Dubai Marina Penthouse', price: 8500000 }, created_at: '2024-06-01T10:00:00Z' },
-  { id: '4', user_id: '2', action: 'property_added', entity_type: 'property', entity_id: '2', new_value: { title: 'Palm Jumeirah Villa', price: 25000000 }, created_at: '2024-05-15T10:00:00Z' },
-  { id: '5', user_id: '2', action: 'lead_added', entity_type: 'lead', entity_id: '1', new_value: { name: 'James Wilson', status: 'new' }, created_at: new Date(Date.now() - 2 * 3600000).toISOString() },
+  { id: '4', user_id: '1', action: 'property_added', entity_type: 'property', entity_id: '2', new_value: { title: 'Palm Jumeirah Villa', price: 25000000 }, created_at: '2024-05-15T10:00:00Z' },
+  { id: '5', user_id: '1', action: 'lead_added', entity_type: 'lead', entity_id: '1', new_value: { name: 'James Wilson', status: 'new' }, created_at: new Date(Date.now() - 2 * 3600000).toISOString() },
   { id: '6', user_id: '1', action: 'lead_added', entity_type: 'lead', entity_id: '2', new_value: { name: 'Fatima Al-Sayed', status: 'contacted' }, created_at: new Date(Date.now() - 24 * 3600000).toISOString() },
-  { id: '7', user_id: '2', action: 'deal_created', entity_type: 'deal', entity_id: '1', new_value: { property: 'Downtown Boulevard Apartment', value: 3200000 }, created_at: new Date(Date.now() - 72 * 3600000).toISOString() },
-  { id: '8', user_id: '2', action: 'deal_closed', entity_type: 'deal', entity_id: '1', old_value: { status: 'pending' }, new_value: { status: 'closed', commission: 64000 }, created_at: new Date(Date.now() - 48 * 3600000).toISOString() },
-  { id: '9', user_id: '2', action: 'login', entity_type: 'user', entity_id: '2', created_at: new Date(Date.now() - 4 * 3600000).toISOString() },
-  { id: '10', user_id: '1', action: 'login', entity_type: 'user', entity_id: '1', created_at: new Date(Date.now() - 1 * 3600000).toISOString() },
+  { id: '7', user_id: '1', action: 'deal_created', entity_type: 'deal', entity_id: '1', new_value: { property: 'Downtown Boulevard Apartment', value: 3200000 }, created_at: new Date(Date.now() - 72 * 3600000).toISOString() },
+  { id: '8', user_id: '1', action: 'deal_closed', entity_type: 'deal', entity_id: '1', old_value: { status: 'pending' }, new_value: { status: 'closed', commission: 64000 }, created_at: new Date(Date.now() - 48 * 3600000).toISOString() },
+  { id: '9', user_id: '1', action: 'login', entity_type: 'user', entity_id: '1', created_at: new Date(Date.now() - 1 * 3600000).toISOString() },
 ];
 
 interface AppState {

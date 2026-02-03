@@ -66,13 +66,29 @@ const leadStatusLabels: Record<string, string> = {
 
 export function DashboardPage() {
   const { user, isAdmin } = useAuth();
-  const { getStats, getPropertiesForUser, getActivitiesForUser, getLeadsForUser } = useAppStore();
+  const { getStats, getPropertiesForUser, getActivitiesForUser, getLeadsForUser, getDealsForUser, properties: allProperties } = useAppStore();
+
+  // For admins: show all stats
+  // For users: show only their own stats (starts at 0 for new users)
   const stats = getStats(isAdmin);
 
-  // Get data based on user role - users only see their own data
-  const properties = user ? getPropertiesForUser(user.id, isAdmin) : [];
+  // Get data based on user role
+  // - Admin sees everything
+  // - Users see: all properties (shared by admin), their own leads, their own deals, their own activity
+  const properties = user ? (isAdmin ? getPropertiesForUser(user.id, true) : allProperties) : [];
   const activities = user ? getActivitiesForUser(user.id, isAdmin) : [];
   const leads = user ? getLeadsForUser(user.id, isAdmin) : [];
+  const deals = user ? getDealsForUser(user.id, isAdmin) : [];
+
+  // Calculate user-specific stats for non-admins
+  const userStats = isAdmin ? stats : {
+    total_properties: allProperties.length, // Users can view all properties
+    properties_sold: allProperties.filter(p => p.status === 'sold').length,
+    team_size: stats.team_size,
+    active_leads: leads.filter(l => !['won', 'lost', 'archived'].includes(l.status)).length, // Only their leads
+    total_value: deals.filter(d => d.status === 'closed').reduce((sum, d) => sum + d.deal_value, 0), // Only their deals
+    available_properties: allProperties.filter(p => p.status === 'available').length,
+  };
 
   // Commission Calculator state
   const [salePrice, setSalePrice] = useState<string>('1000000');
@@ -83,39 +99,40 @@ export function DashboardPage() {
   const recentActivities = activities.slice(0, 6);
   const recentLeads = leads.filter(l => !['won', 'lost', 'archived'].includes(l.status)).slice(0, 4);
 
+  // For users: show "My Leads" count, for admin show "Active Leads"
   const statCards = [
     {
       title: 'Total Properties',
-      value: stats.total_properties,
+      value: userStats.total_properties,
       icon: Building2,
-      trend: '+12%',
+      trend: isAdmin ? '+12%' : '',
       color: 'from-blue-500 to-blue-600',
       iconBg: 'bg-blue-500/10',
       iconColor: 'text-blue-500',
     },
     {
       title: 'Properties Sold',
-      value: stats.properties_sold,
+      value: userStats.properties_sold,
       icon: CheckCircle,
-      trend: '+8%',
+      trend: isAdmin ? '+8%' : '',
       color: 'from-emerald-500 to-emerald-600',
       iconBg: 'bg-emerald-500/10',
       iconColor: 'text-emerald-500',
     },
     {
-      title: 'Team Size',
-      value: stats.team_size,
+      title: isAdmin ? 'Team Size' : 'My Deals',
+      value: isAdmin ? userStats.team_size : deals.length,
       icon: Users,
-      trend: '+2',
+      trend: isAdmin ? '+2' : '',
       color: 'from-purple-500 to-purple-600',
       iconBg: 'bg-purple-500/10',
       iconColor: 'text-purple-500',
     },
     {
-      title: 'Active Leads',
-      value: stats.active_leads,
+      title: isAdmin ? 'Active Leads' : 'My Leads',
+      value: userStats.active_leads,
       icon: UserCheck,
-      trend: '+15%',
+      trend: isAdmin ? '+15%' : '',
       color: 'from-accent to-accent/80',
       iconBg: 'bg-accent/10',
       iconColor: 'text-accent',
@@ -176,11 +193,17 @@ export function DashboardPage() {
                     <div>
                       <p className="text-sm text-muted-foreground font-medium">{stat.title}</p>
                       <p className="text-3xl font-bold font-heading mt-1">{stat.value}</p>
-                      <div className="flex items-center gap-1 mt-2">
-                        <TrendingUp className="h-3 w-3 text-emerald-500" />
-                        <span className="text-xs text-emerald-500 font-medium">{stat.trend}</span>
-                        <span className="text-xs text-muted-foreground">vs last month</span>
-                      </div>
+                      {stat.trend ? (
+                        <div className="flex items-center gap-1 mt-2">
+                          <TrendingUp className="h-3 w-3 text-emerald-500" />
+                          <span className="text-xs text-emerald-500 font-medium">{stat.trend}</span>
+                          <span className="text-xs text-muted-foreground">vs last month</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1 mt-2">
+                          <span className="text-xs text-muted-foreground">Your personal stats</span>
+                        </div>
+                      )}
                     </div>
                     <div className={`p-4 rounded-2xl ${stat.iconBg} group-hover:scale-110 transition-transform duration-300`}>
                       <Icon className={`h-6 w-6 ${stat.iconColor}`} />
