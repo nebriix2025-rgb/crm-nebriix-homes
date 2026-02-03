@@ -44,6 +44,7 @@ import {
   Video,
   FileText,
   X,
+  Download,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -745,8 +746,17 @@ export function PropertiesPage() {
                         </div>
                         <div className="grid grid-cols-4 gap-2">
                           {viewingProperty.images.map((img, idx) => (
-                            <div key={idx} className="aspect-square rounded-lg overflow-hidden bg-muted">
+                            <div key={idx} className="aspect-square rounded-lg overflow-hidden bg-muted relative group">
                               <img src={img} alt={`Property ${idx + 1}`} className="w-full h-full object-cover" />
+                              {isAdmin && (
+                                <a
+                                  href={img}
+                                  download={`property-image-${idx + 1}`}
+                                  className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  <Download className="h-5 w-5 text-white" />
+                                </a>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -768,6 +778,16 @@ export function PropertiesPage() {
                                 <p className="text-sm">{vid.name}</p>
                                 <p className="text-xs text-muted-foreground">{formatFileSize(vid.size)}</p>
                               </div>
+                              {isAdmin && (
+                                <a
+                                  href={vid.url}
+                                  download={vid.name}
+                                  className="p-2 rounded-lg hover:bg-muted transition-colors"
+                                  title="Download video"
+                                >
+                                  <Download className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                                </a>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -789,6 +809,16 @@ export function PropertiesPage() {
                                 <p className="text-sm">{doc.name}</p>
                                 <p className="text-xs text-muted-foreground">{formatFileSize(doc.size)}</p>
                               </div>
+                              {isAdmin && (
+                                <a
+                                  href={doc.url}
+                                  download={doc.name}
+                                  className="p-2 rounded-lg hover:bg-muted transition-colors"
+                                  title="Download document"
+                                >
+                                  <Download className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                                </a>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -825,16 +855,18 @@ export function PropertiesPage() {
               <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
                 Close
               </Button>
-              <Button
-                onClick={() => {
-                  setIsViewDialogOpen(false);
-                  if (viewingProperty) openEditDialog(viewingProperty);
-                }}
-                className="bg-accent text-accent-foreground hover:bg-accent/90"
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Property
-              </Button>
+              {isAdmin && (
+                <Button
+                  onClick={() => {
+                    setIsViewDialogOpen(false);
+                    if (viewingProperty) openEditDialog(viewingProperty);
+                  }}
+                  className="bg-accent text-accent-foreground hover:bg-accent/90"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Property
+                </Button>
+              )}
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -882,23 +914,25 @@ export function PropertiesPage() {
                           <Eye className="h-4 w-4 mr-2" />
                           View Details
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => openEditDialog(property)}>
-                          <Edit className="h-4 w-4 mr-2" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => handleArchiveProperty(property.id)}>
-                          <Archive className="h-4 w-4 mr-2" />
-                          Archive
-                        </DropdownMenuItem>
                         {isAdmin && (
-                          <DropdownMenuItem
-                            className="text-destructive"
-                            onClick={() => handleDeleteProperty(property.id)}
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
+                          <>
+                            <DropdownMenuItem onClick={() => openEditDialog(property)}>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleArchiveProperty(property.id)}>
+                              <Archive className="h-4 w-4 mr-2" />
+                              Archive
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onClick={() => handleDeleteProperty(property.id)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </>
                         )}
                       </DropdownMenuContent>
                     </DropdownMenu>
