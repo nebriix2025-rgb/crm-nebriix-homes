@@ -152,3 +152,48 @@ export interface AuditLog {
   ip_address?: string;
   created_at: string;
 }
+
+// Notification Types
+export type NotificationType =
+  | 'property_added'
+  | 'property_updated'
+  | 'deal_created'
+  | 'deal_updated'
+  | 'deal_closed'
+  | 'lead_added'
+  | 'lead_assigned'
+  | 'lead_import'
+  | 'announcement'
+  | 'password_changed'
+  | 'profile_updated'
+  | 'user_created'
+  | 'approval_request';
+
+export type NotificationPriority = 'low' | 'medium' | 'high';
+
+export interface Notification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  priority: NotificationPriority;
+  recipient_id: string; // User ID who should see this notification
+  sender_id?: string; // User ID who triggered the notification
+  sender?: User;
+  entity_type?: 'property' | 'lead' | 'deal' | 'user' | 'import';
+  entity_id?: string;
+  read: boolean;
+  created_at: string;
+}
+
+// Announcement (Admin broadcasts to all users)
+export interface Announcement {
+  id: string;
+  title: string;
+  message: string;
+  priority: NotificationPriority;
+  created_by: string;
+  creator?: User;
+  created_at: string;
+  expires_at?: string;
+}

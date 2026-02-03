@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Property, Lead, Deal, Activity, User, DashboardStats, AuditLog, ActivityAction } from '@/types';
+import type { Property, Lead, Deal, Activity, User, DashboardStats, AuditLog, ActivityAction, Notification, Announcement } from '@/types';
 
 // Demo data for the application (Admin/User roles only)
 const DEMO_USERS: User[] = [
@@ -280,6 +280,8 @@ interface AppState {
   activities: Activity[];
   users: User[];
   auditLogs: AuditLog[];
+  notifications: Notification[];
+  announcements: Announcement[];
 
   // UI State
   searchQuery: string;
@@ -322,6 +324,19 @@ interface AppState {
   // Audit Log Actions
   addAuditLog: (log: Omit<AuditLog, 'id' | 'created_at'>) => void;
 
+  // Notification Actions
+  addNotification: (notification: Omit<Notification, 'id' | 'created_at' | 'read'>) => void;
+  markNotificationRead: (id: string) => void;
+  markAllNotificationsRead: (userId: string) => void;
+  deleteNotification: (id: string) => void;
+  getNotificationsForUser: (userId: string) => Notification[];
+  getUnreadCountForUser: (userId: string) => number;
+
+  // Announcement Actions
+  addAnnouncement: (announcement: Omit<Announcement, 'id' | 'created_at'>) => void;
+  deleteAnnouncement: (id: string) => void;
+  getActiveAnnouncements: () => Announcement[];
+
   // UI Actions
   setSearchQuery: (query: string) => void;
 
@@ -355,6 +370,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   activities: DEMO_ACTIVITIES.map(a => ({ ...a, user: DEMO_USERS.find(u => u.id === a.user_id) })),
   users: DEMO_USERS,
   auditLogs: DEMO_AUDIT_LOGS.map(log => ({ ...log, user: DEMO_USERS.find(u => u.id === log.user_id) })),
+  notifications: [],
+  announcements: [],
   searchQuery: '',
   isLoading: false,
   currentUserId: null,
@@ -364,29 +381,51 @@ export const useAppStore = create<AppState>((set, get) => ({
   // Property Actions
   setProperties: (properties) => set({ properties }),
 
-  addProperty: (property) => set((state) => ({
-    properties: [property, ...state.properties],
-    activities: [{
-      id: Date.now().toString(),
-      user_id: property.created_by,
-      user: state.users.find(u => u.id === property.created_by),
-      action: 'property_added' as ActivityAction,
-      entity_type: 'property',
+  addProperty: (property) => set((state) => {
+    const creator = state.users.find(u => u.id === property.created_by);
+    const allUsers = state.users.filter(u => u.role === 'user' && u.status === 'active');
+
+    // Create notifications for all users when admin adds a property
+    const userNotifications = creator?.role === 'admin' ? allUsers.map(user => ({
+      id: `${Date.now()}-${user.id}`,
+      type: 'property_added' as const,
+      title: 'New Property Listed',
+      message: `New property available: ${property.title} in ${property.location}`,
+      priority: 'medium' as const,
+      recipient_id: user.id,
+      sender_id: property.created_by,
+      sender: creator,
+      entity_type: 'property' as const,
       entity_id: property.id,
-      entity_name: property.title,
+      read: false,
       created_at: new Date().toISOString(),
-    }, ...state.activities],
-    auditLogs: [{
-      id: Date.now().toString(),
-      user_id: property.created_by,
-      user: state.users.find(u => u.id === property.created_by),
-      action: 'property_added',
-      entity_type: 'property',
-      entity_id: property.id,
-      new_value: { title: property.title, price: property.price, location: property.location, status: property.status },
-      created_at: new Date().toISOString(),
-    }, ...state.auditLogs],
-  })),
+    })) : [];
+
+    return {
+      properties: [property, ...state.properties],
+      activities: [{
+        id: Date.now().toString(),
+        user_id: property.created_by,
+        user: creator,
+        action: 'property_added' as ActivityAction,
+        entity_type: 'property',
+        entity_id: property.id,
+        entity_name: property.title,
+        created_at: new Date().toISOString(),
+      }, ...state.activities],
+      auditLogs: [{
+        id: Date.now().toString(),
+        user_id: property.created_by,
+        user: creator,
+        action: 'property_added',
+        entity_type: 'property',
+        entity_id: property.id,
+        new_value: { title: property.title, price: property.price, location: property.location, status: property.status },
+        created_at: new Date().toISOString(),
+      }, ...state.auditLogs],
+      notifications: [...userNotifications, ...state.notifications],
+    };
+  }),
 
   updateProperty: (id, updates) => set((state) => {
     const property = state.properties.find(p => p.id === id);
@@ -455,29 +494,51 @@ export const useAppStore = create<AppState>((set, get) => ({
   // Lead Actions
   setLeads: (leads) => set({ leads }),
 
-  addLead: (lead) => set((state) => ({
-    leads: [lead, ...state.leads],
-    activities: [{
-      id: Date.now().toString(),
-      user_id: lead.created_by,
-      user: state.users.find(u => u.id === lead.created_by),
-      action: 'lead_added' as ActivityAction,
-      entity_type: 'lead',
+  addLead: (lead) => set((state) => {
+    const creator = state.users.find(u => u.id === lead.created_by);
+    const admins = state.users.filter(u => u.role === 'admin' && u.id !== lead.created_by);
+
+    // Create notifications for all admins when a non-admin user adds a lead
+    const adminNotifications = creator?.role !== 'admin' ? admins.map(admin => ({
+      id: `${Date.now()}-${admin.id}`,
+      type: 'lead_added' as const,
+      title: 'New Lead Added',
+      message: `${creator?.full_name || 'A user'} added a new lead: ${lead.name}`,
+      priority: 'medium' as const,
+      recipient_id: admin.id,
+      sender_id: lead.created_by,
+      sender: creator,
+      entity_type: 'lead' as const,
       entity_id: lead.id,
-      entity_name: lead.name,
+      read: false,
       created_at: new Date().toISOString(),
-    }, ...state.activities],
-    auditLogs: [{
-      id: Date.now().toString(),
-      user_id: lead.created_by,
-      user: state.users.find(u => u.id === lead.created_by),
-      action: 'lead_added',
-      entity_type: 'lead',
-      entity_id: lead.id,
-      new_value: { name: lead.name, status: lead.status, source: lead.source },
-      created_at: new Date().toISOString(),
-    }, ...state.auditLogs],
-  })),
+    })) : [];
+
+    return {
+      leads: [lead, ...state.leads],
+      activities: [{
+        id: Date.now().toString(),
+        user_id: lead.created_by,
+        user: creator,
+        action: 'lead_added' as ActivityAction,
+        entity_type: 'lead',
+        entity_id: lead.id,
+        entity_name: lead.name,
+        created_at: new Date().toISOString(),
+      }, ...state.activities],
+      auditLogs: [{
+        id: Date.now().toString(),
+        user_id: lead.created_by,
+        user: creator,
+        action: 'lead_added',
+        entity_type: 'lead',
+        entity_id: lead.id,
+        new_value: { name: lead.name, status: lead.status, source: lead.source },
+        created_at: new Date().toISOString(),
+      }, ...state.auditLogs],
+      notifications: [...adminNotifications, ...state.notifications],
+    };
+  }),
 
   updateLead: (id, updates) => set((state) => {
     const lead = state.leads.find(l => l.id === id);
@@ -546,29 +607,68 @@ export const useAppStore = create<AppState>((set, get) => ({
   // Deal Actions
   setDeals: (deals) => set({ deals }),
 
-  addDeal: (deal) => set((state) => ({
-    deals: [deal, ...state.deals],
-    activities: [{
-      id: Date.now().toString(),
-      user_id: deal.created_by || deal.closer_id,
-      user: state.users.find(u => u.id === (deal.created_by || deal.closer_id)),
-      action: 'deal_created' as ActivityAction,
-      entity_type: 'deal',
+  addDeal: (deal) => set((state) => {
+    const creator = state.users.find(u => u.id === (deal.created_by || deal.closer_id));
+    const closer = state.users.find(u => u.id === deal.closer_id);
+    const allUsers = state.users.filter(u => u.role === 'user' && u.status === 'active');
+
+    // Notify all users when admin creates a deal
+    const userNotifications = creator?.role === 'admin' ? allUsers.map(user => ({
+      id: `${Date.now()}-${user.id}`,
+      type: 'deal_created' as const,
+      title: 'New Deal Created',
+      message: `New deal created for ${deal.property?.title || 'a property'} - Value: AED ${deal.deal_value.toLocaleString()}`,
+      priority: 'medium' as const,
+      recipient_id: user.id,
+      sender_id: deal.created_by || deal.closer_id,
+      sender: creator,
+      entity_type: 'deal' as const,
       entity_id: deal.id,
-      entity_name: deal.property?.title || 'New Deal',
+      read: false,
       created_at: new Date().toISOString(),
-    }, ...state.activities],
-    auditLogs: [{
-      id: Date.now().toString(),
-      user_id: deal.created_by || deal.closer_id,
-      user: state.users.find(u => u.id === (deal.created_by || deal.closer_id)),
-      action: 'deal_created',
-      entity_type: 'deal',
+    })) : [];
+
+    // Notify the closer if they are different from creator
+    const closerNotification = closer && closer.id !== (deal.created_by || deal.closer_id) ? [{
+      id: `${Date.now()}-closer-${closer.id}`,
+      type: 'deal_created' as const,
+      title: 'Deal Assigned to You',
+      message: `You have been assigned as closer for ${deal.property?.title || 'a property'}`,
+      priority: 'high' as const,
+      recipient_id: closer.id,
+      sender_id: deal.created_by || deal.closer_id,
+      sender: creator,
+      entity_type: 'deal' as const,
       entity_id: deal.id,
-      new_value: { property: deal.property?.title, value: deal.deal_value, status: deal.status },
+      read: false,
       created_at: new Date().toISOString(),
-    }, ...state.auditLogs],
-  })),
+    }] : [];
+
+    return {
+      deals: [deal, ...state.deals],
+      activities: [{
+        id: Date.now().toString(),
+        user_id: deal.created_by || deal.closer_id,
+        user: creator,
+        action: 'deal_created' as ActivityAction,
+        entity_type: 'deal',
+        entity_id: deal.id,
+        entity_name: deal.property?.title || 'New Deal',
+        created_at: new Date().toISOString(),
+      }, ...state.activities],
+      auditLogs: [{
+        id: Date.now().toString(),
+        user_id: deal.created_by || deal.closer_id,
+        user: creator,
+        action: 'deal_created',
+        entity_type: 'deal',
+        entity_id: deal.id,
+        new_value: { property: deal.property?.title, value: deal.deal_value, status: deal.status },
+        created_at: new Date().toISOString(),
+      }, ...state.auditLogs],
+      notifications: [...userNotifications, ...closerNotification, ...state.notifications],
+    };
+  }),
 
   updateDeal: (id, updates) => set((state) => {
     const deal = state.deals.find(d => d.id === id);
@@ -781,5 +881,64 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
 
     return logs;
+  },
+
+  // Notification Actions
+  addNotification: (notification) => set((state) => ({
+    notifications: [{
+      ...notification,
+      id: Date.now().toString(),
+      read: false,
+      created_at: new Date().toISOString(),
+      sender: notification.sender_id ? state.users.find(u => u.id === notification.sender_id) : undefined,
+    }, ...state.notifications].slice(0, 100), // Keep last 100 notifications
+  })),
+
+  markNotificationRead: (id) => set((state) => ({
+    notifications: state.notifications.map(n =>
+      n.id === id ? { ...n, read: true } : n
+    ),
+  })),
+
+  markAllNotificationsRead: (userId) => set((state) => ({
+    notifications: state.notifications.map(n =>
+      n.recipient_id === userId ? { ...n, read: true } : n
+    ),
+  })),
+
+  deleteNotification: (id) => set((state) => ({
+    notifications: state.notifications.filter(n => n.id !== id),
+  })),
+
+  getNotificationsForUser: (userId) => {
+    const state = get();
+    return state.notifications.filter(n => n.recipient_id === userId);
+  },
+
+  getUnreadCountForUser: (userId) => {
+    const state = get();
+    return state.notifications.filter(n => n.recipient_id === userId && !n.read).length;
+  },
+
+  // Announcement Actions
+  addAnnouncement: (announcement) => set((state) => ({
+    announcements: [{
+      ...announcement,
+      id: Date.now().toString(),
+      created_at: new Date().toISOString(),
+      creator: state.users.find(u => u.id === announcement.created_by),
+    }, ...state.announcements],
+  })),
+
+  deleteAnnouncement: (id) => set((state) => ({
+    announcements: state.announcements.filter(a => a.id !== id),
+  })),
+
+  getActiveAnnouncements: () => {
+    const state = get();
+    const now = new Date();
+    return state.announcements.filter(a =>
+      !a.expires_at || new Date(a.expires_at) > now
+    );
   },
 }));

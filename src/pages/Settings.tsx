@@ -3,6 +3,7 @@ import { Header } from '@/components/layout/Header';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppStore } from '@/lib/store';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import type { NotificationType, NotificationPriority } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,7 +39,7 @@ import { toast } from '@/hooks/useToast';
 
 export function SettingsPage() {
   const { user, isAdmin, updateProfile, changePassword } = useAuth();
-  const { users } = useAppStore();
+  const { users, addNotification } = useAppStore();
 
   // Profile form state
   const [profileForm, setProfileForm] = useState({
@@ -96,6 +97,24 @@ export function SettingsPage() {
         full_name: profileForm.full_name,
         phone: profileForm.phone,
       });
+
+      // Send notification to admins when a user updates their profile
+      if (user.role !== 'admin') {
+        const admins = users.filter(u => u.role === 'admin' && u.id !== user.id);
+        admins.forEach(admin => {
+          addNotification({
+            type: 'profile_updated' as NotificationType,
+            title: 'User Profile Updated',
+            message: `${user.full_name} updated their profile information`,
+            priority: 'low' as NotificationPriority,
+            recipient_id: admin.id,
+            sender_id: user.id,
+            entity_type: 'user',
+            entity_id: user.id,
+          });
+        });
+      }
+
       toast({
         title: 'Profile updated',
         description: 'Your profile has been saved successfully.',
@@ -137,6 +156,24 @@ export function SettingsPage() {
     setIsChangingPassword(true);
     try {
       await changePassword(passwordForm.currentPassword, passwordForm.newPassword);
+
+      // Send notification to admins when a user changes their password
+      if (user && user.role !== 'admin') {
+        const admins = users.filter(u => u.role === 'admin' && u.id !== user.id);
+        admins.forEach(admin => {
+          addNotification({
+            type: 'password_changed' as NotificationType,
+            title: 'User Password Changed',
+            message: `${user.full_name} changed their account password`,
+            priority: 'medium' as NotificationPriority,
+            recipient_id: admin.id,
+            sender_id: user.id,
+            entity_type: 'user',
+            entity_id: user.id,
+          });
+        });
+      }
+
       toast({
         title: 'Password changed',
         description: 'Your password has been updated successfully.',

@@ -1,4 +1,4 @@
-import { Bell, Search, Moon, Sun, Building2, Users2, Handshake, Command } from 'lucide-react';
+import { Bell, Search, Moon, Sun, Building2, Users2, Handshake, Command, Check, CheckCheck, Trash2, BellRing, Home, FileText, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -7,33 +7,72 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAppStore } from '@/lib/store';
-import { formatRelativeTime, getInitials } from '@/lib/utils';
+import { formatRelativeTime, getInitials, cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import type { NotificationType } from '@/types';
 
 interface HeaderProps {
   title: string;
   subtitle?: string;
 }
 
+// Helper function to get notification icon based on type
+const getNotificationIcon = (type: NotificationType) => {
+  switch (type) {
+    case 'property_added':
+    case 'property_updated':
+      return <Home className="h-4 w-4 text-blue-500" />;
+    case 'deal_created':
+    case 'deal_updated':
+    case 'deal_closed':
+      return <Handshake className="h-4 w-4 text-green-500" />;
+    case 'lead_added':
+    case 'lead_assigned':
+    case 'lead_import':
+      return <Users2 className="h-4 w-4 text-purple-500" />;
+    case 'announcement':
+      return <BellRing className="h-4 w-4 text-accent" />;
+    case 'user_created':
+      return <UserPlus className="h-4 w-4 text-teal-500" />;
+    case 'password_changed':
+    case 'profile_updated':
+      return <FileText className="h-4 w-4 text-orange-500" />;
+    default:
+      return <Bell className="h-4 w-4 text-muted-foreground" />;
+  }
+};
+
+// Helper function to get priority badge color
+const getPriorityColor = (priority: string) => {
+  switch (priority) {
+    case 'high':
+      return 'bg-red-500/10 text-red-500 border-red-500/20';
+    case 'medium':
+      return 'bg-amber-500/10 text-amber-500 border-amber-500/20';
+    default:
+      return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
+  }
+};
+
 export function Header({ title, subtitle }: HeaderProps) {
-  const { activities, properties, leads, users } = useAppStore();
-  const { isAdmin } = useAuth();
+  const { properties, leads, users, notifications, markNotificationRead, markAllNotificationsRead, deleteNotification, getUnreadCountForUser } = useAppStore();
+  const { isAdmin, user } = useAuth();
   const navigate = useNavigate();
   const [isDark, setIsDark] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [localSearch, setLocalSearch] = useState('');
 
-  const recentActivities = activities.slice(0, 5);
+  // Get notifications for current user
+  const userNotifications = user ? notifications.filter(n => n.recipient_id === user.id) : [];
+  const unreadCount = user ? getUnreadCountForUser(user.id) : 0;
 
   // Keyboard shortcut for search
   useEffect(() => {
@@ -83,29 +122,6 @@ export function Header({ title, subtitle }: HeaderProps) {
     setIsDark(!isDark);
   };
 
-  const getActivityDescription = (activity: typeof activities[0]) => {
-    switch (activity.action) {
-      case 'property_added':
-        return `Added property: ${activity.entity_name}`;
-      case 'property_sold':
-        return `Sold property: ${activity.entity_name}`;
-      case 'lead_added':
-        return `Added lead: ${activity.entity_name}`;
-      case 'lead_converted':
-        return `Converted lead: ${activity.entity_name}`;
-      case 'deal_created':
-        return `Created deal: ${activity.entity_name}`;
-      case 'deal_closed':
-        return `Closed deal: ${activity.entity_name}`;
-      case 'login':
-        return 'Logged in';
-      case 'user_created':
-        return `New user: ${activity.entity_name}`;
-      default:
-        return activity.action;
-    }
-  };
-
   return (
     <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-16 items-center justify-between px-6">
@@ -140,34 +156,139 @@ export function Header({ title, subtitle }: HeaderProps) {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="relative">
                 <Bell className="h-5 w-5" />
-                {recentActivities.length > 0 && (
-                  <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-accent-foreground">
-                    {recentActivities.length}
+                {unreadCount > 0 && (
+                  <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground animate-pulse">
+                    {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80">
-              <DropdownMenuLabel>Recent Activity</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {recentActivities.length === 0 ? (
-                <div className="p-4 text-center text-sm text-muted-foreground">
-                  No recent activity
+            <DropdownMenuContent align="end" className="w-96 p-0">
+              <div className="flex items-center justify-between p-4 border-b">
+                <div>
+                  <h4 className="font-semibold">Notifications</h4>
+                  <p className="text-xs text-muted-foreground">
+                    {unreadCount > 0 ? `${unreadCount} unread` : 'All caught up!'}
+                  </p>
                 </div>
-              ) : (
-                recentActivities.map((activity) => (
-                  <DropdownMenuItem key={activity.id} className="flex flex-col items-start gap-1 p-3">
-                    <div className="flex w-full items-center justify-between">
-                      <span className="text-sm font-medium">{activity.user?.full_name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {formatRelativeTime(activity.created_at)}
-                      </span>
+                {unreadCount > 0 && user && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs h-8"
+                    onClick={() => markAllNotificationsRead(user.id)}
+                  >
+                    <CheckCheck className="h-3.5 w-3.5 mr-1" />
+                    Mark all read
+                  </Button>
+                )}
+              </div>
+
+              <ScrollArea className="max-h-[400px]">
+                {userNotifications.length === 0 ? (
+                  <div className="p-8 text-center">
+                    <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+                      <Bell className="h-6 w-6 text-muted-foreground" />
                     </div>
-                    <span className="text-xs text-muted-foreground">
-                      {getActivityDescription(activity)}
-                    </span>
-                  </DropdownMenuItem>
-                ))
+                    <p className="text-sm text-muted-foreground">No notifications yet</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      You'll be notified when something important happens
+                    </p>
+                  </div>
+                ) : (
+                  <div className="divide-y">
+                    {userNotifications.slice(0, 10).map((notification) => (
+                      <div
+                        key={notification.id}
+                        className={cn(
+                          "p-4 hover:bg-muted/50 transition-colors cursor-pointer relative",
+                          !notification.read && "bg-accent/5"
+                        )}
+                        onClick={() => {
+                          markNotificationRead(notification.id);
+                          // Navigate based on entity type
+                          if (notification.entity_type === 'property') {
+                            navigate('/dashboard/properties');
+                          } else if (notification.entity_type === 'deal') {
+                            navigate('/dashboard/deals');
+                          } else if (notification.entity_type === 'lead') {
+                            navigate('/dashboard/leads');
+                          }
+                        }}
+                      >
+                        {!notification.read && (
+                          <div className="absolute left-1.5 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-accent" />
+                        )}
+                        <div className="flex gap-3 pl-2">
+                          <div className="shrink-0 w-9 h-9 rounded-full bg-muted flex items-center justify-center">
+                            {getNotificationIcon(notification.type)}
+                          </div>
+                          <div className="flex-1 min-w-0 space-y-1">
+                            <div className="flex items-start justify-between gap-2">
+                              <p className={cn(
+                                "text-sm leading-tight",
+                                !notification.read && "font-semibold"
+                              )}>
+                                {notification.title}
+                              </p>
+                              <Badge
+                                variant="outline"
+                                className={cn("text-[10px] px-1.5 py-0 shrink-0", getPriorityColor(notification.priority))}
+                              >
+                                {notification.priority}
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground line-clamp-2">
+                              {notification.message}
+                            </p>
+                            <div className="flex items-center justify-between pt-1">
+                              <span className="text-[10px] text-muted-foreground">
+                                {notification.sender?.full_name && `From ${notification.sender.full_name} • `}
+                                {formatRelativeTime(notification.created_at)}
+                              </span>
+                              <div className="flex gap-1">
+                                {!notification.read && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      markNotificationRead(notification.id);
+                                    }}
+                                    title="Mark as read"
+                                  >
+                                    <Check className="h-3 w-3" />
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    deleteNotification(notification.id);
+                                  }}
+                                  title="Delete"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+
+              {userNotifications.length > 10 && (
+                <div className="p-3 border-t text-center">
+                  <Button variant="ghost" size="sm" className="text-xs w-full">
+                    View all {userNotifications.length} notifications
+                  </Button>
+                </div>
               )}
             </DropdownMenuContent>
           </DropdownMenu>
