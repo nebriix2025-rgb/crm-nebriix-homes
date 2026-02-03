@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Home, Eye, EyeOff, Loader2, AlertCircle, Shield, User, Sparkles } from 'lucide-react';
 
+
 export function LoginPage() {
   const navigate = useNavigate();
   const { signIn } = useAuth();
@@ -22,22 +23,6 @@ export function LoginPage() {
 
     try {
       await signIn(email, password);
-      navigate('/dashboard');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Invalid credentials');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const quickLogin = async (userEmail: string) => {
-    setEmail(userEmail);
-    setPassword('demo123');
-    setError('');
-    setIsLoading(true);
-
-    try {
-      await signIn(userEmail, 'demo123');
       navigate('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invalid credentials');
@@ -200,57 +185,6 @@ export function LoginPage() {
               )}
             </Button>
           </form>
-
-          {/* Divider */}
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">Quick Access</span>
-            </div>
-          </div>
-
-          {/* Quick Login Options */}
-          <div className="grid gap-3">
-            <Button
-              variant="outline"
-              className="w-full h-14 justify-start hover:border-accent/50 hover:bg-accent/5 transition-all"
-              onClick={() => quickLogin('admin@nebriix.com')}
-              disabled={isLoading}
-            >
-              <div className="flex items-center gap-3 w-full">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-accent/20 to-accent/10 flex items-center justify-center border border-accent/20">
-                  <Shield className="h-5 w-5 text-accent" />
-                </div>
-                <div className="text-left">
-                  <p className="font-semibold">Admin Account</p>
-                  <p className="text-xs text-muted-foreground">Full access to all features</p>
-                </div>
-              </div>
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full h-14 justify-start hover:border-blue-500/50 hover:bg-blue-500/5 transition-all"
-              onClick={() => quickLogin('user@nebriix.com')}
-              disabled={isLoading}
-            >
-              <div className="flex items-center gap-3 w-full">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-500/10 flex items-center justify-center border border-blue-500/20">
-                  <User className="h-5 w-5 text-blue-500" />
-                </div>
-                <div className="text-left">
-                  <p className="font-semibold">User Account</p>
-                  <p className="text-xs text-muted-foreground">Standard agent access</p>
-                </div>
-              </div>
-            </Button>
-          </div>
-
-          {/* Footer Note */}
-          <p className="text-xs text-center text-muted-foreground">
-            Demo password: <code className="bg-muted px-1.5 py-0.5 rounded font-mono">demo123</code>
-          </p>
         </div>
       </div>
     </div>
