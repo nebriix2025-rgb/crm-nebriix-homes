@@ -4,6 +4,7 @@ import { Header } from '@/components/layout/Header';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppStore } from '@/lib/store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import type { Activity } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -66,7 +67,7 @@ const leadStatusLabels: Record<string, string> = {
 
 export function DashboardPage() {
   const { user, isAdmin } = useAuth();
-  const { getStats, getPropertiesForUser, getActivitiesForUser, getLeadsForUser, getDealsForUser, properties: allProperties } = useAppStore();
+  const { getStats, getPropertiesForUser, getActivitiesForUser, getLeadsForUser, getDealsForUser, properties: allProperties, activities: allActivities } = useAppStore();
 
   // For admins: show all stats
   // For users: show only their own stats (starts at 0 for new users)
@@ -74,11 +75,42 @@ export function DashboardPage() {
 
   // Get data based on user role
   // - Admin sees everything
-  // - Users see: all properties (shared by admin), their own leads, their own deals, their own activity
+  // - Users see: all properties (shared by admin), their own leads, their own deals
   const properties = user ? (isAdmin ? getPropertiesForUser(user.id, true) : allProperties) : [];
-  const activities = user ? getActivitiesForUser(user.id, isAdmin) : [];
   const leads = user ? getLeadsForUser(user.id, isAdmin) : [];
   const deals = user ? getDealsForUser(user.id, isAdmin) : [];
+
+  // For activities:
+  // - Admin sees all activities
+  // - Users see only relevant activities: property launches, deals they're involved in, their own actions
+  //   NOT admin internal operations like user management
+  const activities: Activity[] = user ? (isAdmin
+    ? getActivitiesForUser(user.id, true)
+    : allActivities.filter(activity => {
+        // Show user's own actions
+        if (activity.user_id === user.id) return true;
+
+        // Show property-related activities (new listings, updates)
+        if (activity.entity_type === 'property' && ['property_added', 'property_sold'].includes(activity.action)) return true;
+
+        // Show deal activities that involve this user
+        if (activity.entity_type === 'deal') {
+          const deal = deals.find(d => d.id === activity.entity_id);
+          if (deal && (deal.closer_id === user.id || deal.created_by === user.id)) return true;
+        }
+
+        // Show lead activities for leads assigned to or created by user
+        if (activity.entity_type === 'lead') {
+          const lead = leads.find(l => l.id === activity.entity_id);
+          if (lead) return true;
+        }
+
+        // Hide admin internal operations (user_created, login, etc.)
+        if (['user_created', 'user_updated', 'user_deleted', 'login'].includes(activity.action)) return false;
+
+        return false;
+      })
+  ) : [];
 
   // Calculate user-specific stats for non-admins
   const userStats = isAdmin ? stats : {
