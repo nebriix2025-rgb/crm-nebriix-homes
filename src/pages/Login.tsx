@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Home, Eye, EyeOff, Loader2, AlertCircle, Shield, User, Sparkles } from 'lucide-react';
+import { Eye, EyeOff, Loader2, AlertCircle, Shield, User, Sparkles } from 'lucide-react';
 
 
 export function LoginPage() {
@@ -44,14 +44,8 @@ export function LoginPage() {
         {/* Content */}
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
           {/* Logo */}
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-accent to-accent/80 shadow-lg shadow-accent/20">
-              <Home className="h-6 w-6 text-accent-foreground" />
-            </div>
-            <div>
-              <h1 className="font-heading text-2xl font-bold text-white">Nebriix Homes</h1>
-              <p className="text-xs text-white/50 uppercase tracking-wider">Premium Real Estate CRM</p>
-            </div>
+          <div>
+            <img src="/images/nebriix-logo.svg" alt="Nebriix Homes" className="h-24 w-auto" />
           </div>
 
           {/* Features */}
@@ -110,13 +104,9 @@ export function LoginPage() {
       <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
         <div className="w-full max-w-md space-y-8">
           {/* Mobile Logo */}
-          <div className="lg:hidden flex flex-col items-center gap-4 mb-8">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-accent to-accent/80 shadow-lg shadow-accent/20">
-              <Home className="h-8 w-8 text-accent-foreground" />
-            </div>
-            <div className="text-center">
-              <h1 className="font-heading text-2xl font-bold">Nebriix Homes</h1>
-              <p className="text-sm text-muted-foreground">Premium Real Estate CRM</p>
+          <div className="lg:hidden flex flex-col items-center mb-8">
+            <div className="bg-sidebar rounded-2xl p-6">
+              <img src="/images/nebriix-logo.svg" alt="Nebriix Homes" className="h-20 w-auto" />
             </div>
           </div>
 

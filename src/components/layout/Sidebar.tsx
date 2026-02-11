@@ -11,7 +11,6 @@ import {
   ChevronRight,
   UserCog,
   ScrollText,
-  Home,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -54,21 +53,13 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
         {/* Logo */}
         <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
           {!collapsed && (
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-accent to-accent/80 shadow-lg shadow-accent/20">
-                <Home className="h-5 w-5 text-accent-foreground" />
-              </div>
-              <div>
-                <span className="font-heading text-lg font-bold text-sidebar-foreground">
-                  Nebriix Homes
-                </span>
-                <p className="text-[10px] text-sidebar-foreground/50 uppercase tracking-wider">Premium CRM</p>
-              </div>
+            <div className="flex items-center">
+              <img src="/images/nebriix-logo.svg" alt="Nebriix Homes" className="h-10 w-auto" />
             </div>
           )}
           {collapsed && (
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-accent to-accent/80 shadow-lg shadow-accent/20 mx-auto">
-              <Home className="h-5 w-5 text-accent-foreground" />
+            <div className="flex items-center justify-center mx-auto">
+              <img src="/images/nebriix-logo.svg" alt="NH" className="h-8 w-auto" />
             </div>
           )}
           {onToggle && (
