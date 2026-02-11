@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { User, UserRole } from '@/types';
 
@@ -20,10 +20,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSigningIn, setIsSigningIn] = useState(false);
+  const signingInRef = useRef(false);
 
-  const fetchUserProfile = async (userId: string) => {
-    console.log('fetchUserProfile: Starting for userId:', userId);
+  const fetchUserProfile = async (userId: string): Promise<boolean> => {
+    console.log('fetchUserProfile called with userId:', userId);
     try {
       const { data, error } = await supabase
         .from('users')
@@ -31,46 +31,66 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq('id', userId)
         .single();
 
-      console.log('fetchUserProfile: Result:', { data: data ? 'has data' : 'no data', error });
+      console.log('fetchUserProfile result:', { data, error });
 
       if (error) {
         console.error('Error fetching user profile:', error);
         setUser(null);
-        return;
+        return false;
       }
 
-      console.log('fetchUserProfile: Setting user');
+      console.log('Setting user:', data);
       setUser(data);
+      return true;
     } catch (error) {
-      console.error('Error fetching user profile:', error);
+      console.error('Error fetching user profile (catch):', error);
       setUser(null);
+      return false;
     }
   };
 
   useEffect(() => {
     let isMounted = true;
+    let timeoutId: ReturnType<typeof setTimeout>;
 
     // Get initial session
     const initSession = async () => {
-      console.log('AuthContext: Getting session...');
+      console.log('AuthContext: initSession called');
+
+      // Set a timeout to ensure we eventually stop loading
+      timeoutId = setTimeout(() => {
+        if (isMounted) {
+          console.log('AuthContext: Timeout reached, setting isLoading to false');
+          setIsLoading(false);
+        }
+      }, 5000);
+
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
-        console.log('AuthContext: Session result:', session ? 'Has session' : 'No session', error);
+        console.log('AuthContext: getSession result:', { session: session?.user?.id, error });
 
-        if (!isMounted) return;
+        if (!isMounted) {
+          console.log('AuthContext: component unmounted, skipping');
+          return;
+        }
 
         if (session?.user) {
-          console.log('AuthContext: Fetching profile for user:', session.user.id);
-          await fetchUserProfile(session.user.id);
+          console.log('AuthContext: Found session, fetching profile for:', session.user.id);
+          const success = await fetchUserProfile(session.user.id);
+          console.log('AuthContext: fetchUserProfile completed, success:', success);
+        } else {
+          console.log('AuthContext: No session found');
         }
 
         if (isMounted) {
+          clearTimeout(timeoutId);
           console.log('AuthContext: Setting isLoading to false');
           setIsLoading(false);
         }
       } catch (err) {
         console.error('AuthContext: getSession error:', err);
         if (isMounted) {
+          clearTimeout(timeoutId);
           setIsLoading(false);
         }
       }
@@ -81,90 +101,106 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('AuthContext: Auth state changed:', event, 'session:', session ? 'exists' : 'null', 'isMounted:', isMounted);
-        if (!isMounted) {
-          console.log('AuthContext: Not mounted, skipping');
-          return;
-        }
+        if (!isMounted) return;
 
         if (event === 'SIGNED_IN' && session?.user) {
-          console.log('AuthContext: SIGNED_IN - calling fetchUserProfile');
           await fetchUserProfile(session.user.id);
-          console.log('AuthContext: fetchUserProfile completed');
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
         }
-        console.log('AuthContext: Setting isLoading to false after auth change');
         setIsLoading(false);
       }
     );
 
     return () => {
       isMounted = false;
+      clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
-    // Prevent concurrent sign-in attempts
-    if (isSigningIn) {
+    // Prevent concurrent sign-in attempts using ref (persists across renders)
+    if (signingInRef.current) {
       console.log('Sign in already in progress, skipping...');
       return;
     }
 
-    setIsSigningIn(true);
-    console.log('Starting sign in for:', email);
+    signingInRef.current = true;
 
     try {
-      console.log('Calling signInWithPassword...');
+      console.log('Starting sign in for:', email);
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
 
-      console.log('Auth result received:', { hasData: !!data, hasError: !!error, error });
-
-      if (error) throw error;
+      if (error) {
+        console.error('Auth error:', error);
+        throw error;
+      }
 
       if (!data.user) {
         throw new Error('Authentication failed - no user returned');
       }
 
-      console.log('Auth user ID:', data.user.id);
+      console.log('Auth successful, user ID:', data.user.id);
 
-      // Fetch user profile to check status
-      console.log('Fetching user profile...');
-      const { data: profile, error: profileError } = await supabase
+      // Fetch user profile - try by ID first, then by email as fallback
+      let profile = null;
+
+      // Try fetching by ID
+      console.log('Fetching profile by ID...');
+      const { data: idProfile, error: idError } = await supabase
         .from('users')
         .select('*')
         .eq('id', data.user.id)
         .single();
 
-      console.log('Profile result:', { profile, profileError });
+      console.log('Profile by ID result:', idProfile, idError);
 
-      if (profileError) throw new Error('User profile not found: ' + profileError.message);
+      if (idProfile) {
+        profile = idProfile;
+      } else {
+        // Try fetching by email as a fallback (in case IDs don't match)
+        console.log('Profile not found by ID, trying by email...');
+        const { data: emailProfile, error: emailError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('email', data.user.email)
+          .single();
+
+        console.log('Profile by email result:', emailProfile, emailError);
+
+        if (emailProfile) {
+          profile = emailProfile;
+        } else {
+          throw new Error('User profile not found. Please contact an administrator.');
+        }
+      }
 
       if (profile.status !== 'active') {
         await supabase.auth.signOut();
         throw new Error('Your account has been deactivated. Please contact an administrator.');
       }
 
-      // Update last login
-      console.log('Updating last login...');
-      await supabase
+      // Update last login (don't wait for it)
+      supabase
         .from('users')
         .update({ last_login: new Date().toISOString() })
-        .eq('id', data.user.id);
+        .eq('id', profile.id)
+        .then(() => {});
 
-      console.log('Sign in complete, setting user');
+      console.log('Setting user profile:', profile);
       setUser({ ...profile, last_login: new Date().toISOString() });
     } catch (error) {
       console.error('Sign in error:', error);
       throw error;
     } finally {
-      setIsSigningIn(false);
+      signingInRef.current = false;
     }
-  }, [isSigningIn]);
+  }, []);
 
   const signOut = useCallback(async () => {
     const { error } = await supabase.auth.signOut();

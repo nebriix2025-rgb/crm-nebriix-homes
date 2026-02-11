@@ -285,9 +285,11 @@ export function PropertiesPage() {
 
   const handleEditProperty = async () => {
     if (!editingProperty || !formData.title || !formData.price || !formData.location) {
+      console.error('Validation failed - missing required fields');
       return;
     }
 
+    setIsUploading(true);
     try {
       await updateProperty(editingProperty.id, {
         title: formData.title,
@@ -307,6 +309,8 @@ export function PropertiesPage() {
       setIsEditDialogOpen(false);
     } catch (error) {
       console.error('Failed to update property:', error);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -317,9 +321,9 @@ export function PropertiesPage() {
       description: property.description || '',
       type: property.type,
       status: property.status,
-      price: property.price.toString(),
+      price: property.price?.toString() || '',
       location: property.location,
-      area_sqft: property.area_sqft.toString(),
+      area_sqft: property.area_sqft?.toString() || '',
       bedrooms: property.bedrooms?.toString() || '',
       bathrooms: property.bathrooms?.toString() || '',
       owner_name: property.owner_name || '',
