@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Header } from '@/components/layout/Header';
 import { useAppStore } from '@/lib/store';
 import { useAuth } from '@/contexts/AuthContext';
+import { uploadPropertyFile } from '@/lib/supabase';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -124,6 +125,14 @@ export function PropertiesPage() {
   const [uploadedImages, setUploadedImages] = useState<PropertyMedia[]>([]);
   const [uploadedVideos, setUploadedVideos] = useState<PropertyMedia[]>([]);
   const [uploadedDocuments, setUploadedDocuments] = useState<PropertyMedia[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+
+  // Pending files for upload (stores File objects before property is created)
+  const pendingFilesRef = useRef<{
+    images: { id: string; file: File }[];
+    videos: { id: string; file: File }[];
+    documents: { id: string; file: File }[];
+  }>({ images: [], videos: [], documents: [] });
 
   const resetForm = () => {
     setFormData({
@@ -142,28 +151,36 @@ export function PropertiesPage() {
     setUploadedImages([]);
     setUploadedVideos([]);
     setUploadedDocuments([]);
+    pendingFilesRef.current = { images: [], videos: [], documents: [] };
   };
 
-  // File upload handlers
+  // File upload handlers - stores files locally for preview, uploads on submit
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'video' | 'pdf') => {
     const files = e.target.files;
     if (!files) return;
 
     Array.from(files).forEach((file) => {
+      const id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+
+      // Create preview media object with blob URL
       const media: PropertyMedia = {
-        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+        id,
         type,
-        url: URL.createObjectURL(file),
+        url: URL.createObjectURL(file), // Temporary preview URL
         name: file.name,
         size: file.size,
         uploaded_at: new Date().toISOString(),
       };
 
+      // Store actual file for later upload
       if (type === 'image') {
+        pendingFilesRef.current.images.push({ id, file });
         setUploadedImages(prev => [...prev, media]);
       } else if (type === 'video') {
+        pendingFilesRef.current.videos.push({ id, file });
         setUploadedVideos(prev => [...prev, media]);
       } else {
+        pendingFilesRef.current.documents.push({ id, file });
         setUploadedDocuments(prev => [...prev, media]);
       }
     });
@@ -175,10 +192,13 @@ export function PropertiesPage() {
   const removeMedia = (id: string, type: 'image' | 'video' | 'pdf') => {
     if (type === 'image') {
       setUploadedImages(prev => prev.filter(m => m.id !== id));
+      pendingFilesRef.current.images = pendingFilesRef.current.images.filter(f => f.id !== id);
     } else if (type === 'video') {
       setUploadedVideos(prev => prev.filter(m => m.id !== id));
+      pendingFilesRef.current.videos = pendingFilesRef.current.videos.filter(f => f.id !== id);
     } else {
       setUploadedDocuments(prev => prev.filter(m => m.id !== id));
+      pendingFilesRef.current.documents = pendingFilesRef.current.documents.filter(f => f.id !== id);
     }
   };
 
@@ -188,62 +208,106 @@ export function PropertiesPage() {
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
-  const handleAddProperty = () => {
+  const handleAddProperty = async () => {
     if (!formData.title || !formData.price || !formData.location || !formData.area_sqft) {
       return;
     }
 
-    const newProperty: Property = {
-      id: Date.now().toString(),
-      title: formData.title,
-      description: formData.description,
-      type: formData.type,
-      status: formData.status,
-      price: parseFloat(formData.price),
-      location: formData.location,
-      area_sqft: parseFloat(formData.area_sqft),
-      bedrooms: formData.bedrooms ? parseInt(formData.bedrooms) : undefined,
-      bathrooms: formData.bathrooms ? parseInt(formData.bathrooms) : undefined,
-      images: uploadedImages.map(m => m.url),
-      videos: uploadedVideos,
-      documents: uploadedDocuments,
-      media: [...uploadedImages, ...uploadedVideos, ...uploadedDocuments],
-      features: [],
-      owner_name: formData.owner_name || undefined,
-      owner_phone: formData.owner_phone || undefined,
-      created_by: user?.id || '1',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
+    setIsUploading(true);
 
-    addProperty(newProperty);
-    resetForm();
-    setIsAddDialogOpen(false);
+    try {
+      // Generate a temporary property ID for file paths
+      const tempPropertyId = Date.now().toString();
+
+      // Upload all pending files to Supabase Storage
+      const uploadedImageUrls: string[] = [];
+      const uploadedVideoMedia: PropertyMedia[] = [];
+      const uploadedDocMedia: PropertyMedia[] = [];
+
+      // Upload images
+      for (const pending of pendingFilesRef.current.images) {
+        const { url } = await uploadPropertyFile(tempPropertyId, pending.file, 'image');
+        uploadedImageUrls.push(url);
+      }
+
+      // Upload videos
+      for (const pending of pendingFilesRef.current.videos) {
+        const { url } = await uploadPropertyFile(tempPropertyId, pending.file, 'video');
+        uploadedVideoMedia.push({
+          id: pending.id,
+          type: 'video',
+          url,
+          name: pending.file.name,
+          size: pending.file.size,
+          uploaded_at: new Date().toISOString(),
+        });
+      }
+
+      // Upload documents
+      for (const pending of pendingFilesRef.current.documents) {
+        const { url } = await uploadPropertyFile(tempPropertyId, pending.file, 'document');
+        uploadedDocMedia.push({
+          id: pending.id,
+          type: 'pdf',
+          url,
+          name: pending.file.name,
+          size: pending.file.size,
+          uploaded_at: new Date().toISOString(),
+        });
+      }
+
+      await addProperty({
+        title: formData.title,
+        description: formData.description || undefined,
+        type: formData.type,
+        status: formData.status,
+        price: parseFloat(formData.price),
+        location: formData.location,
+        area_sqft: parseInt(formData.area_sqft),
+        bedrooms: formData.bedrooms ? parseInt(formData.bedrooms) : undefined,
+        bathrooms: formData.bathrooms ? parseInt(formData.bathrooms) : undefined,
+        images: uploadedImageUrls,
+        videos: uploadedVideoMedia,
+        documents: uploadedDocMedia,
+        features: [],
+        owner_name: formData.owner_name || undefined,
+        owner_phone: formData.owner_phone || undefined,
+        created_by: user?.id || '',
+      });
+      resetForm();
+      setIsAddDialogOpen(false);
+    } catch (error) {
+      console.error('Failed to add property:', error);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
-  const handleEditProperty = () => {
+  const handleEditProperty = async () => {
     if (!editingProperty || !formData.title || !formData.price || !formData.location) {
       return;
     }
 
-    updateProperty(editingProperty.id, {
-      title: formData.title,
-      description: formData.description,
-      type: formData.type,
-      status: formData.status,
-      price: parseFloat(formData.price),
-      location: formData.location,
-      area_sqft: parseFloat(formData.area_sqft),
-      bedrooms: formData.bedrooms ? parseInt(formData.bedrooms) : undefined,
-      bathrooms: formData.bathrooms ? parseInt(formData.bathrooms) : undefined,
-      owner_name: formData.owner_name || undefined,
-      owner_phone: formData.owner_phone || undefined,
-      updated_at: new Date().toISOString(),
-    });
-
-    resetForm();
-    setEditingProperty(null);
-    setIsEditDialogOpen(false);
+    try {
+      await updateProperty(editingProperty.id, {
+        title: formData.title,
+        description: formData.description || undefined,
+        type: formData.type,
+        status: formData.status,
+        price: parseFloat(formData.price),
+        location: formData.location,
+        area_sqft: formData.area_sqft ? parseInt(formData.area_sqft) : undefined,
+        bedrooms: formData.bedrooms ? parseInt(formData.bedrooms) : undefined,
+        bathrooms: formData.bathrooms ? parseInt(formData.bathrooms) : undefined,
+        owner_name: formData.owner_name || undefined,
+        owner_phone: formData.owner_phone || undefined,
+      });
+      resetForm();
+      setEditingProperty(null);
+      setIsEditDialogOpen(false);
+    } catch (error) {
+      console.error('Failed to update property:', error);
+    }
   };
 
   const openEditDialog = (property: Property) => {
@@ -550,8 +614,13 @@ export function PropertiesPage() {
       </div>
 
       <DialogFooter>
-        <Button type="submit" onClick={onSubmit} className="bg-accent text-accent-foreground hover:bg-accent/90">
-          {submitLabel}
+        <Button
+          type="submit"
+          onClick={onSubmit}
+          disabled={isUploading}
+          className="bg-accent text-accent-foreground hover:bg-accent/90"
+        >
+          {isUploading ? 'Uploading...' : submitLabel}
         </Button>
       </DialogFooter>
     </div>
@@ -748,15 +817,15 @@ export function PropertiesPage() {
                           {viewingProperty.images.map((img, idx) => (
                             <div key={idx} className="aspect-square rounded-lg overflow-hidden bg-muted relative group">
                               <img src={img} alt={`Property ${idx + 1}`} className="w-full h-full object-cover" />
-                              {isAdmin && (
-                                <a
-                                  href={img}
-                                  download={`property-image-${idx + 1}`}
-                                  className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                >
-                                  <Download className="h-5 w-5 text-white" />
-                                </a>
-                              )}
+                              <a
+                                href={img}
+                                download={`property-image-${idx + 1}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <Download className="h-5 w-5 text-white" />
+                              </a>
                             </div>
                           ))}
                         </div>
@@ -778,16 +847,16 @@ export function PropertiesPage() {
                                 <p className="text-sm">{vid.name}</p>
                                 <p className="text-xs text-muted-foreground">{formatFileSize(vid.size)}</p>
                               </div>
-                              {isAdmin && (
-                                <a
-                                  href={vid.url}
-                                  download={vid.name}
-                                  className="p-2 rounded-lg hover:bg-muted transition-colors"
-                                  title="Download video"
-                                >
-                                  <Download className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-                                </a>
-                              )}
+                              <a
+                                href={vid.url}
+                                download={vid.name}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-2 rounded-lg hover:bg-muted transition-colors"
+                                title="Download video"
+                              >
+                                <Download className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                              </a>
                             </div>
                           ))}
                         </div>
@@ -809,16 +878,16 @@ export function PropertiesPage() {
                                 <p className="text-sm">{doc.name}</p>
                                 <p className="text-xs text-muted-foreground">{formatFileSize(doc.size)}</p>
                               </div>
-                              {isAdmin && (
-                                <a
-                                  href={doc.url}
-                                  download={doc.name}
-                                  className="p-2 rounded-lg hover:bg-muted transition-colors"
-                                  title="Download document"
-                                >
-                                  <Download className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-                                </a>
-                              )}
+                              <a
+                                href={doc.url}
+                                download={doc.name}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-2 rounded-lg hover:bg-muted transition-colors"
+                                title="Download document"
+                              >
+                                <Download className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                              </a>
                             </div>
                           ))}
                         </div>

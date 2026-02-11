@@ -78,6 +78,14 @@ export interface Lead {
 // Deal Types
 export type DealStatus = 'pending' | 'in_progress' | 'closed' | 'cancelled';
 
+export interface DealAttachment {
+  id: string;
+  url: string;
+  name: string;
+  size: number;
+  uploaded_at: string;
+}
+
 export interface Deal {
   id: string;
   property_id: string;
@@ -92,6 +100,7 @@ export interface Deal {
   closer?: User;
   closed_at?: string;
   notes?: string;
+  attachments?: DealAttachment[];
   created_by?: string;
   created_at: string;
   updated_at: string;

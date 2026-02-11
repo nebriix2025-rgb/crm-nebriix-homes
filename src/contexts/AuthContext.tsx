@@ -17,98 +17,13 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Demo users for when Supabase is not configured (Admin/User roles only)
-const DEMO_USERS: Record<string, User> = {
-  'admin@nebriix.com': {
-    id: '1',
-    email: 'admin@nebriix.com',
-    full_name: 'Ahmed Al-Rashid',
-    role: 'admin',
-    status: 'active',
-    phone: '+971 50 123 4567',
-    password_hash: 'demo123',
-    created_at: '2024-01-15T10:00:00Z',
-    updated_at: new Date().toISOString(),
-  },
-  'user@nebriix.com': {
-    id: '2',
-    email: 'user@nebriix.com',
-    full_name: 'Sarah Thompson',
-    role: 'user',
-    status: 'active',
-    phone: '+971 50 234 5678',
-    password_hash: 'demo123',
-    created_at: '2024-02-20T10:00:00Z',
-    updated_at: new Date().toISOString(),
-  },
-  'john@nebriix.com': {
-    id: '3',
-    email: 'john@nebriix.com',
-    full_name: 'John Smith',
-    role: 'user',
-    status: 'active',
-    password_hash: 'demo123',
-    created_at: '2024-03-10T10:00:00Z',
-    updated_at: new Date().toISOString(),
-  },
-};
-
-const isDemoMode = !import.meta.env.VITE_SUPABASE_URL;
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
-  const loadDemoUser = () => {
-    const savedUser = localStorage.getItem('nebriix_demo_user');
-    if (savedUser) {
-      const parsed = JSON.parse(savedUser);
-      // Merge with any updates from localStorage
-      const storedUsers = localStorage.getItem('nebriix_users');
-      if (storedUsers) {
-        const users = JSON.parse(storedUsers);
-        const updatedUser = users.find((u: User) => u.id === parsed.id);
-        if (updatedUser) {
-          setUser(updatedUser);
-          return;
-        }
-      }
-      setUser(parsed);
-    }
-  };
-
-  useEffect(() => {
-    if (isDemoMode) {
-      loadDemoUser();
-      setIsLoading(false);
-      return;
-    }
-
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        fetchUserProfile(session.user.id);
-      } else {
-        setIsLoading(false);
-      }
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_IN' && session?.user) {
-          await fetchUserProfile(session.user.id);
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null);
-        }
-        setIsLoading(false);
-      }
-    );
-
-    return () => subscription.unsubscribe();
-  }, []);
+  const [isSigningIn, setIsSigningIn] = useState(false);
 
   const fetchUserProfile = async (userId: string) => {
+    console.log('fetchUserProfile: Starting for userId:', userId);
     try {
       const { data, error } = await supabase
         .from('users')
@@ -116,66 +31,142 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq('id', userId)
         .single();
 
-      if (error) throw error;
+      console.log('fetchUserProfile: Result:', { data: data ? 'has data' : 'no data', error });
+
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        setUser(null);
+        return;
+      }
+
+      console.log('fetchUserProfile: Setting user');
       setUser(data);
     } catch (error) {
       console.error('Error fetching user profile:', error);
       setUser(null);
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const signIn = useCallback(async (email: string, password: string) => {
-    if (isDemoMode) {
-      // Check demo users first
-      let demoUser = DEMO_USERS[email.toLowerCase()];
+  useEffect(() => {
+    let isMounted = true;
 
-      // Check dynamically created users from localStorage
-      if (!demoUser) {
-        const storedUsers = localStorage.getItem('nebriix_users');
-        if (storedUsers) {
-          const users: User[] = JSON.parse(storedUsers);
-          demoUser = users.find(u => u.email.toLowerCase() === email.toLowerCase()) || null as unknown as User;
+    // Get initial session
+    const initSession = async () => {
+      console.log('AuthContext: Getting session...');
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        console.log('AuthContext: Session result:', session ? 'Has session' : 'No session', error);
+
+        if (!isMounted) return;
+
+        if (session?.user) {
+          console.log('AuthContext: Fetching profile for user:', session.user.id);
+          await fetchUserProfile(session.user.id);
+        }
+
+        if (isMounted) {
+          console.log('AuthContext: Setting isLoading to false');
+          setIsLoading(false);
+        }
+      } catch (err) {
+        console.error('AuthContext: getSession error:', err);
+        if (isMounted) {
+          setIsLoading(false);
         }
       }
+    };
 
-      if (demoUser && (demoUser.password_hash === password || password === 'demo123')) {
-        // Check if user is active
-        if (demoUser.status !== 'active') {
-          throw new Error('Your account has been deactivated. Please contact an administrator.');
+    initSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('AuthContext: Auth state changed:', event, 'session:', session ? 'exists' : 'null', 'isMounted:', isMounted);
+        if (!isMounted) {
+          console.log('AuthContext: Not mounted, skipping');
+          return;
         }
 
-        const updatedUser = { ...demoUser, last_login: new Date().toISOString() };
-        setUser(updatedUser);
-        localStorage.setItem('nebriix_demo_user', JSON.stringify(updatedUser));
-
-        // Update in stored users
-        const storedUsers = localStorage.getItem('nebriix_users');
-        if (storedUsers) {
-          const users: User[] = JSON.parse(storedUsers);
-          const idx = users.findIndex(u => u.id === updatedUser.id);
-          if (idx >= 0) {
-            users[idx] = updatedUser;
-            localStorage.setItem('nebriix_users', JSON.stringify(users));
-          }
+        if (event === 'SIGNED_IN' && session?.user) {
+          console.log('AuthContext: SIGNED_IN - calling fetchUserProfile');
+          await fetchUserProfile(session.user.id);
+          console.log('AuthContext: fetchUserProfile completed');
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
         }
-        return;
+        console.log('AuthContext: Setting isLoading to false after auth change');
+        setIsLoading(false);
       }
-      throw new Error('Invalid credentials. Try admin@nebriix.com or user@nebriix.com with password demo123');
-    }
+    );
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const signOut = useCallback(async () => {
-    if (isDemoMode) {
-      setUser(null);
-      localStorage.removeItem('nebriix_demo_user');
+  const signIn = useCallback(async (email: string, password: string) => {
+    // Prevent concurrent sign-in attempts
+    if (isSigningIn) {
+      console.log('Sign in already in progress, skipping...');
       return;
     }
 
+    setIsSigningIn(true);
+    console.log('Starting sign in for:', email);
+
+    try {
+      console.log('Calling signInWithPassword...');
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      console.log('Auth result received:', { hasData: !!data, hasError: !!error, error });
+
+      if (error) throw error;
+
+      if (!data.user) {
+        throw new Error('Authentication failed - no user returned');
+      }
+
+      console.log('Auth user ID:', data.user.id);
+
+      // Fetch user profile to check status
+      console.log('Fetching user profile...');
+      const { data: profile, error: profileError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', data.user.id)
+        .single();
+
+      console.log('Profile result:', { profile, profileError });
+
+      if (profileError) throw new Error('User profile not found: ' + profileError.message);
+
+      if (profile.status !== 'active') {
+        await supabase.auth.signOut();
+        throw new Error('Your account has been deactivated. Please contact an administrator.');
+      }
+
+      // Update last login
+      console.log('Updating last login...');
+      await supabase
+        .from('users')
+        .update({ last_login: new Date().toISOString() })
+        .eq('id', data.user.id);
+
+      console.log('Sign in complete, setting user');
+      setUser({ ...profile, last_login: new Date().toISOString() });
+    } catch (error) {
+      console.error('Sign in error:', error);
+      throw error;
+    } finally {
+      setIsSigningIn(false);
+    }
+  }, [isSigningIn]);
+
+  const signOut = useCallback(async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
     setUser(null);
@@ -184,35 +175,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const changePassword = useCallback(async (currentPassword: string, newPassword: string) => {
     if (!user) throw new Error('Not authenticated');
 
-    if (isDemoMode) {
-      // Verify current password
-      const storedUsers = localStorage.getItem('nebriix_users');
-      let users: User[] = storedUsers ? JSON.parse(storedUsers) : Object.values(DEMO_USERS);
-
-      const currentUser = users.find(u => u.id === user.id);
-      if (!currentUser) throw new Error('User not found');
-
-      if (currentUser.password_hash !== currentPassword && currentPassword !== 'demo123') {
-        throw new Error('Current password is incorrect');
-      }
-
-      if (newPassword.length < 6) {
-        throw new Error('New password must be at least 6 characters');
-      }
-
-      // Update password
-      const updatedUser = { ...currentUser, password_hash: newPassword, updated_at: new Date().toISOString() };
-      const idx = users.findIndex(u => u.id === user.id);
-      if (idx >= 0) {
-        users[idx] = updatedUser;
-      }
-
-      localStorage.setItem('nebriix_users', JSON.stringify(users));
-      localStorage.setItem('nebriix_demo_user', JSON.stringify(updatedUser));
-      setUser(updatedUser);
-      return;
+    if (newPassword.length < 6) {
+      throw new Error('New password must be at least 6 characters');
     }
 
+    // Verify current password by re-authenticating
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: currentPassword,
+    });
+
+    if (signInError) {
+      throw new Error('Current password is incorrect');
+    }
+
+    // Now update the password
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     if (error) throw error;
   }, [user]);
@@ -220,52 +197,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const updateProfile = useCallback(async (updates: Partial<User>) => {
     if (!user) throw new Error('Not authenticated');
 
-    if (isDemoMode) {
-      // Get stored users or initialize from DEMO_USERS
-      const storedUsers = localStorage.getItem('nebriix_users');
-      let users: User[] = storedUsers ? JSON.parse(storedUsers) : [];
+    // Users cannot change their own role or email
+    const safeUpdates = {
+      ...updates,
+      role: undefined,
+      email: undefined,
+      updated_at: new Date().toISOString(),
+    };
 
-      // If no users in storage, initialize with demo users
-      if (users.length === 0) {
-        users = Object.values(DEMO_USERS);
+    // Remove undefined fields
+    Object.keys(safeUpdates).forEach(key => {
+      if (safeUpdates[key as keyof typeof safeUpdates] === undefined) {
+        delete safeUpdates[key as keyof typeof safeUpdates];
       }
+    });
 
-      const updatedUser: User = {
-        ...user,
-        ...updates,
-        updated_at: new Date().toISOString(),
-        // Users cannot change their own role or email
-        role: user.role,
-        email: user.email,
-      };
-
-      const idx = users.findIndex(u => u.id === user.id);
-      if (idx >= 0) {
-        users[idx] = updatedUser;
-      } else {
-        users.push(updatedUser);
-      }
-
-      localStorage.setItem('nebriix_users', JSON.stringify(users));
-      localStorage.setItem('nebriix_demo_user', JSON.stringify(updatedUser));
-      setUser(updatedUser);
-      return;
-    }
-
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('users')
-      .update(updates)
-      .eq('id', user.id);
-    if (error) throw error;
+      .update(safeUpdates)
+      .eq('id', user.id)
+      .select()
+      .single();
 
-    setUser({ ...user, ...updates });
+    if (error) throw error;
+    setUser(data);
   }, [user]);
 
-  const refreshUser = useCallback(() => {
-    if (isDemoMode) {
-      loadDemoUser();
-    } else if (user) {
-      fetchUserProfile(user.id);
+  const refreshUser = useCallback(async () => {
+    if (user) {
+      await fetchUserProfile(user.id);
     }
   }, [user]);
 

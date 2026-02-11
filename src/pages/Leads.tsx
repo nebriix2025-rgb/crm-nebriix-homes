@@ -135,55 +135,57 @@ export function LeadsPage() {
     });
   };
 
-  const handleAddLead = () => {
+  const handleAddLead = async () => {
     if (!formData.name || !formData.email || !formData.phone) {
       return;
     }
 
-    const newLead: Lead = {
-      id: Date.now().toString(),
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone,
-      source: formData.source,
-      status: formData.status,
-      budget_min: formData.budget_min ? parseFloat(formData.budget_min) : undefined,
-      budget_max: formData.budget_max ? parseFloat(formData.budget_max) : undefined,
-      preferred_type: formData.preferred_type || undefined,
-      preferred_location: formData.preferred_location || undefined,
-      notes: formData.notes || undefined,
-      created_by: user?.id || '1',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-
-    addLead(newLead);
-    resetForm();
-    setIsAddDialogOpen(false);
+    try {
+      await addLead({
+        name: formData.name,
+        email: formData.email || '',
+        phone: formData.phone || '',
+        source: formData.source,
+        status: formData.status,
+        budget_min: formData.budget_min ? parseFloat(formData.budget_min) : undefined,
+        budget_max: formData.budget_max ? parseFloat(formData.budget_max) : undefined,
+        preferred_type: formData.preferred_type || undefined,
+        preferred_location: formData.preferred_location || undefined,
+        notes: formData.notes || undefined,
+        assigned_to: undefined,
+        created_by: user?.id || '',
+      });
+      resetForm();
+      setIsAddDialogOpen(false);
+    } catch (error) {
+      console.error('Failed to add lead:', error);
+    }
   };
 
-  const handleEditLead = () => {
+  const handleEditLead = async () => {
     if (!editingLead || !formData.name || !formData.email || !formData.phone) {
       return;
     }
 
-    updateLead(editingLead.id, {
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone,
-      source: formData.source,
-      status: formData.status,
-      budget_min: formData.budget_min ? parseFloat(formData.budget_min) : undefined,
-      budget_max: formData.budget_max ? parseFloat(formData.budget_max) : undefined,
-      preferred_type: formData.preferred_type || undefined,
-      preferred_location: formData.preferred_location || undefined,
-      notes: formData.notes || undefined,
-      updated_at: new Date().toISOString(),
-    });
-
-    resetForm();
-    setEditingLead(null);
-    setIsEditDialogOpen(false);
+    try {
+      await updateLead(editingLead.id, {
+        name: formData.name,
+        email: formData.email || undefined,
+        phone: formData.phone || undefined,
+        source: formData.source,
+        status: formData.status,
+        budget_min: formData.budget_min ? parseFloat(formData.budget_min) : undefined,
+        budget_max: formData.budget_max ? parseFloat(formData.budget_max) : undefined,
+        preferred_type: formData.preferred_type || undefined,
+        preferred_location: formData.preferred_location || undefined,
+        notes: formData.notes || undefined,
+      });
+      resetForm();
+      setEditingLead(null);
+      setIsEditDialogOpen(false);
+    } catch (error) {
+      console.error('Failed to update lead:', error);
+    }
   };
 
   const openEditDialog = (lead: Lead) => {

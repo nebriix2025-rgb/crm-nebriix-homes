@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Header } from '@/components/layout/Header';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppStore } from '@/lib/store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { Activity } from '@/types';
+import type { Activity, DashboardStats } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,6 +28,7 @@ import {
   Phone,
   Mail,
   DollarSign,
+  Loader2,
 } from 'lucide-react';
 import { formatRelativeTime, getInitials } from '@/lib/utils';
 
@@ -67,28 +68,44 @@ const leadStatusLabels: Record<string, string> = {
 
 export function DashboardPage() {
   const { user, isAdmin } = useAuth();
-  const { getStats, getPropertiesForUser, getActivitiesForUser, getLeadsForUser, getDealsForUser, properties: allProperties, activities: allActivities } = useAppStore();
+  const {
+    loadInitialData,
+    getStats,
+    properties,
+    leads,
+    deals,
+    activities,
+    isLoading,
+    error,
+    setCurrentUser,
+  } = useAppStore();
 
-  // For admins: show all stats
-  // For users: show only their own stats (starts at 0 for new users)
-  const stats = getStats(isAdmin);
+  const [stats, setStats] = useState<DashboardStats>({
+    total_properties: 0,
+    properties_sold: 0,
+    team_size: 0,
+    active_leads: 0,
+    total_value: 0,
+    available_properties: 0,
+  });
 
-  // Get data based on user role
-  // - Admin sees everything
-  // - Users see: all properties (shared by admin), their own leads, their own deals
-  const properties = user ? (isAdmin ? getPropertiesForUser(user.id, true) : allProperties) : [];
-  const leads = user ? getLeadsForUser(user.id, isAdmin) : [];
-  const deals = user ? getDealsForUser(user.id, isAdmin) : [];
+  // Load data from Supabase when user is available
+  useEffect(() => {
+    if (user) {
+      setCurrentUser(user.id);
+      loadInitialData(user.id, isAdmin);
 
-  // For activities:
-  // - Admin sees all activities
-  // - Users see only relevant activities: property launches, deals they're involved in, their own actions
-  //   NOT admin internal operations like user management
-  const activities: Activity[] = user ? (isAdmin
-    ? getActivitiesForUser(user.id, true)
-    : allActivities.filter(activity => {
+      // Load stats
+      getStats(user.id, isAdmin).then(setStats);
+    }
+  }, [user, isAdmin, loadInitialData, setCurrentUser, getStats]);
+
+  // Filter activities for non-admins
+  const filteredActivities: Activity[] = isAdmin
+    ? activities
+    : activities.filter(activity => {
         // Show user's own actions
-        if (activity.user_id === user.id) return true;
+        if (activity.user_id === user?.id) return true;
 
         // Show property-related activities (new listings, updates)
         if (activity.entity_type === 'property' && ['property_added', 'property_sold'].includes(activity.action)) return true;
@@ -96,7 +113,7 @@ export function DashboardPage() {
         // Show deal activities that involve this user
         if (activity.entity_type === 'deal') {
           const deal = deals.find(d => d.id === activity.entity_id);
-          if (deal && (deal.closer_id === user.id || deal.created_by === user.id)) return true;
+          if (deal && (deal.closer_id === user?.id || deal.created_by === user?.id)) return true;
         }
 
         // Show lead activities for leads assigned to or created by user
@@ -109,18 +126,7 @@ export function DashboardPage() {
         if (['user_created', 'user_updated', 'user_deleted', 'login'].includes(activity.action)) return false;
 
         return false;
-      })
-  ) : [];
-
-  // Calculate user-specific stats for non-admins
-  const userStats = isAdmin ? stats : {
-    total_properties: allProperties.length, // Users can view all properties
-    properties_sold: allProperties.filter(p => p.status === 'sold').length,
-    team_size: stats.team_size,
-    active_leads: leads.filter(l => !['won', 'lost', 'archived'].includes(l.status)).length, // Only their leads
-    total_value: deals.filter(d => d.status === 'closed').reduce((sum, d) => sum + d.deal_value, 0), // Only their deals
-    available_properties: allProperties.filter(p => p.status === 'available').length,
-  };
+      });
 
   // Commission Calculator state
   const [salePrice, setSalePrice] = useState<string>('1000000');
@@ -128,14 +134,14 @@ export function DashboardPage() {
   const calculatedCommission = (parseFloat(salePrice) || 0) * ((parseFloat(commissionRate) || 0) / 100);
 
   const recentProperties = properties.slice(0, 4);
-  const recentActivities = activities.slice(0, 6);
+  const recentActivities = filteredActivities.slice(0, 6);
   const recentLeads = leads.filter(l => !['won', 'lost', 'archived'].includes(l.status)).slice(0, 4);
 
   // For users: show "My Leads" count, for admin show "Active Leads"
   const statCards = [
     {
       title: 'Total Properties',
-      value: userStats.total_properties,
+      value: stats.total_properties,
       icon: Building2,
       trend: isAdmin ? '+12%' : '',
       color: 'from-blue-500 to-blue-600',
@@ -144,7 +150,7 @@ export function DashboardPage() {
     },
     {
       title: 'Properties Sold',
-      value: userStats.properties_sold,
+      value: stats.properties_sold,
       icon: CheckCircle,
       trend: isAdmin ? '+8%' : '',
       color: 'from-emerald-500 to-emerald-600',
@@ -153,7 +159,7 @@ export function DashboardPage() {
     },
     {
       title: isAdmin ? 'Team Size' : 'My Deals',
-      value: isAdmin ? userStats.team_size : deals.length,
+      value: isAdmin ? stats.team_size : deals.length,
       icon: Users,
       trend: isAdmin ? '+2' : '',
       color: 'from-purple-500 to-purple-600',
@@ -162,7 +168,7 @@ export function DashboardPage() {
     },
     {
       title: isAdmin ? 'Active Leads' : 'My Leads',
-      value: userStats.active_leads,
+      value: stats.active_leads,
       icon: UserCheck,
       trend: isAdmin ? '+15%' : '',
       color: 'from-accent to-accent/80',
@@ -178,7 +184,7 @@ export function DashboardPage() {
     return `AED ${price.toLocaleString()}`;
   };
 
-  const getActivityDescription = (activity: typeof activities[0]) => {
+  const getActivityDescription = (activity: typeof filteredActivities[0]) => {
     switch (activity.action) {
       case 'property_added':
         return `added new property "${activity.entity_name}"`;
@@ -198,6 +204,30 @@ export function DashboardPage() {
         return activity.action;
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-accent mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">{error}</p>
+          <Button onClick={() => user && loadInitialData(user.id, isAdmin)}>
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
@@ -270,6 +300,11 @@ export function DashboardPage() {
                   <div className="text-center py-8 text-muted-foreground">
                     <Building2 className="h-12 w-12 mx-auto mb-3 opacity-20" />
                     <p>No properties yet</p>
+                    <Link to="/dashboard/properties">
+                      <Button variant="outline" size="sm" className="mt-3">
+                        Add Property
+                      </Button>
+                    </Link>
                   </div>
                 ) : (
                   recentProperties.map((property) => (
@@ -305,7 +340,7 @@ export function DashboardPage() {
                             </span>
                           )}
                           <span className="flex items-center gap-1">
-                            <Maximize2 className="h-3 w-3" /> {property.area_sqft.toLocaleString()} sqft
+                            <Maximize2 className="h-3 w-3" /> {property.area_sqft?.toLocaleString() || 0} sqft
                           </span>
                         </div>
                         <p className="text-sm font-bold text-accent mt-2">
@@ -382,6 +417,11 @@ export function DashboardPage() {
               <div className="text-center py-8 text-muted-foreground">
                 <UserCheck className="h-12 w-12 mx-auto mb-3 opacity-20" />
                 <p>No active leads</p>
+                <Link to="/dashboard/leads">
+                  <Button variant="outline" size="sm" className="mt-3">
+                    Add Lead
+                  </Button>
+                </Link>
               </div>
             ) : (
               <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">

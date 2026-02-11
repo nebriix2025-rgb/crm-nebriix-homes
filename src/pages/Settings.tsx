@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Header } from '@/components/layout/Header';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppStore } from '@/lib/store';
+import { uploadAvatar } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { NotificationType, NotificationPriority } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -59,6 +60,10 @@ export function SettingsPage() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordError, setPasswordError] = useState('');
+
+  // Avatar upload state
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   // Load user data into form
   useEffect(() => {
@@ -194,6 +199,61 @@ export function SettingsPage() {
     return 'text-red-500';
   };
 
+  // Handle avatar upload
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      toast({
+        title: 'Invalid file type',
+        description: 'Please upload a JPG, PNG, or GIF image.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: 'File too large',
+        description: 'Please upload an image smaller than 2MB.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    try {
+      const avatarUrl = await uploadAvatar(user.id, file);
+      await updateProfile({ avatar_url: avatarUrl });
+
+      toast({
+        title: 'Avatar updated',
+        description: 'Your profile picture has been updated successfully.',
+        variant: 'success',
+      });
+    } catch (error) {
+      toast({
+        title: 'Upload failed',
+        description: error instanceof Error ? error.message : 'Failed to upload avatar',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUploadingAvatar(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen">
       <Header title="Settings" subtitle="Manage your account and application preferences" />
@@ -265,8 +325,27 @@ export function SettingsPage() {
                     {user?.status}
                   </Badge>
                 </div>
-                <Button variant="outline" size="sm">
-                  Change Avatar
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif"
+                  onChange={handleAvatarChange}
+                  className="hidden"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAvatarClick}
+                  disabled={isUploadingAvatar}
+                >
+                  {isUploadingAvatar ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    'Change Avatar'
+                  )}
                 </Button>
                 <p className="text-xs text-muted-foreground mt-2">JPG, PNG or GIF. Max 2MB.</p>
               </div>

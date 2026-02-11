@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Header } from '@/components/layout/Header';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppStore } from '@/lib/store';
+import { uploadDealFile } from '@/lib/supabase';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -42,8 +43,13 @@ import {
   Pencil,
   Trash2,
   Eye,
+  Upload,
+  FileText,
+  X,
+  Download,
+  Paperclip,
 } from 'lucide-react';
-import type { DealStatus, Deal } from '@/types';
+import type { DealStatus, Deal, DealAttachment } from '@/types';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { getInitials, formatRelativeTime } from '@/lib/utils';
 
@@ -89,6 +95,13 @@ const initialFormData: DealFormData = {
   notes: '',
 };
 
+interface PendingFile {
+  id: string;
+  file: File;
+  name: string;
+  size: number;
+}
+
 export function DealsPage() {
   const { user, isAdmin } = useAuth();
   const { properties, leads, users, addDeal, updateDeal, getDealsForUser, getUserById } = useAppStore();
@@ -102,8 +115,32 @@ export function DealsPage() {
   const [deletingDeal, setDeletingDeal] = useState<Deal | null>(null);
   const [viewingDeal, setViewingDeal] = useState<Deal | null>(null);
   const [formData, setFormData] = useState<DealFormData>(initialFormData);
+  const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
 
   const salesUsers = users.filter(u => u.role === 'user' || u.role === 'admin');
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    Array.from(files).forEach((file) => {
+      const id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+      setPendingFiles(prev => [...prev, { id, file, name: file.name, size: file.size }]);
+    });
+
+    e.target.value = '';
+  };
+
+  const removePendingFile = (id: string) => {
+    setPendingFiles(prev => prev.filter(f => f.id !== id));
+  };
 
   // Get deals based on user role - users only see their own data
   const userDeals = user ? getDealsForUser(user.id, isAdmin) : [];
@@ -137,64 +174,73 @@ export function DealsPage() {
     return (dealValue * commissionRate) / 100;
   };
 
-  const handleAddDeal = () => {
-    const selectedProperty = properties.find(p => p.id === formData.property_id);
-    const selectedLead = leads.find(l => l.id === formData.lead_id);
-    const selectedCloser = users.find(u => u.id === formData.closer_id);
+  const handleAddDeal = async () => {
     const dealValue = parseFloat(formData.deal_value) || 0;
     const commissionRate = parseFloat(formData.commission_rate) || 2;
 
-    const newDeal: Deal = {
-      id: Date.now().toString(),
-      property_id: formData.property_id,
-      lead_id: formData.lead_id || undefined,
-      deal_value: dealValue,
-      commission_rate: commissionRate,
-      commission_amount: calculateCommission(formData.deal_value, formData.commission_rate),
-      status: formData.status,
-      closer_id: formData.closer_id,
-      created_by: user?.id,
-      notes: formData.notes || undefined,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      property: selectedProperty,
-      lead: selectedLead,
-      closer: selectedCloser,
-    };
+    setIsUploading(true);
 
-    addDeal(newDeal);
-    setFormData(initialFormData);
-    setIsAddDialogOpen(false);
+    try {
+      // Generate temporary deal ID for file paths
+      const tempDealId = Date.now().toString();
+
+      // Upload all pending files
+      const uploadedAttachments: DealAttachment[] = [];
+      for (const pending of pendingFiles) {
+        const { url, name, size } = await uploadDealFile(tempDealId, pending.file);
+        uploadedAttachments.push({
+          id: pending.id,
+          url,
+          name,
+          size,
+          uploaded_at: new Date().toISOString(),
+        });
+      }
+
+      await addDeal({
+        property_id: formData.property_id,
+        lead_id: formData.lead_id || undefined,
+        deal_value: dealValue,
+        commission_rate: commissionRate,
+        status: formData.status,
+        closer_id: formData.closer_id,
+        created_by: user?.id || '',
+        notes: formData.notes || undefined,
+        attachments: uploadedAttachments.length > 0 ? uploadedAttachments : undefined,
+      });
+      setFormData(initialFormData);
+      setPendingFiles([]);
+      setIsAddDialogOpen(false);
+    } catch (error) {
+      console.error('Failed to add deal:', error);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
-  const handleEditDeal = () => {
+  const handleEditDeal = async () => {
     if (!editingDeal) return;
 
-    const selectedProperty = properties.find(p => p.id === formData.property_id);
-    const selectedLead = leads.find(l => l.id === formData.lead_id);
-    const selectedCloser = users.find(u => u.id === formData.closer_id);
     const dealValue = parseFloat(formData.deal_value) || 0;
     const commissionRate = parseFloat(formData.commission_rate) || 2;
 
-    updateDeal(editingDeal.id, {
-      property_id: formData.property_id,
-      lead_id: formData.lead_id || undefined,
-      deal_value: dealValue,
-      commission_rate: commissionRate,
-      commission_amount: calculateCommission(formData.deal_value, formData.commission_rate),
-      status: formData.status,
-      closer_id: formData.closer_id,
-      notes: formData.notes || undefined,
-      closed_at: formData.status === 'closed' ? new Date().toISOString() : undefined,
-      updated_at: new Date().toISOString(),
-      property: selectedProperty,
-      lead: selectedLead,
-      closer: selectedCloser,
-    });
-
-    setEditingDeal(null);
-    setFormData(initialFormData);
-    setIsEditDialogOpen(false);
+    try {
+      await updateDeal(editingDeal.id, {
+        property_id: formData.property_id,
+        lead_id: formData.lead_id || undefined,
+        deal_value: dealValue,
+        commission_rate: commissionRate,
+        status: formData.status,
+        closer_id: formData.closer_id,
+        notes: formData.notes || undefined,
+        closed_at: formData.status === 'closed' ? new Date().toISOString() : undefined,
+      });
+      setEditingDeal(null);
+      setFormData(initialFormData);
+      setIsEditDialogOpen(false);
+    } catch (error) {
+      console.error('Failed to update deal:', error);
+    }
   };
 
   const openEditDialog = (deal: Deal) => {
@@ -221,12 +267,16 @@ export function DealsPage() {
     setIsViewDialogOpen(true);
   };
 
-  const handleDeleteDeal = () => {
+  const handleDeleteDeal = async () => {
     if (!deletingDeal) return;
-    // For now, mark as cancelled instead of deleting
-    updateDeal(deletingDeal.id, { status: 'cancelled' });
-    setDeletingDeal(null);
-    setIsDeleteDialogOpen(false);
+    try {
+      // For now, mark as cancelled instead of deleting
+      await updateDeal(deletingDeal.id, { status: 'cancelled' });
+      setDeletingDeal(null);
+      setIsDeleteDialogOpen(false);
+    } catch (error) {
+      console.error('Failed to cancel deal:', error);
+    }
   };
 
   // Calculate summary stats - based on user's accessible deals
@@ -349,6 +399,42 @@ export function DealsPage() {
           placeholder="Additional notes about this deal..."
           rows={3}
         />
+      </div>
+
+      {/* File Attachments */}
+      <div className="space-y-2 pt-4 border-t border-border">
+        <Label className="flex items-center gap-2">
+          <Paperclip className="h-4 w-4" />
+          Attachments
+        </Label>
+        <div className="space-y-2">
+          {pendingFiles.map((file) => (
+            <div key={file.id} className="flex items-center gap-3 p-2 rounded-lg bg-muted/50 group">
+              <FileText className="h-5 w-5 text-accent shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm truncate">{file.name}</p>
+                <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => removePendingFile(file.id)}
+                className="h-6 w-6 rounded-full hover:bg-destructive/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <X className="h-4 w-4 text-destructive" />
+              </button>
+            </div>
+          ))}
+          <label className="flex items-center gap-2 p-3 rounded-lg border-2 border-dashed border-border hover:border-accent/50 cursor-pointer transition-colors">
+            <Upload className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Upload files (contracts, documents, etc.)</span>
+            <input
+              type="file"
+              multiple
+              className="hidden"
+              onChange={handleFileUpload}
+            />
+          </label>
+        </div>
       </div>
     </div>
   );
@@ -580,10 +666,10 @@ export function DealsPage() {
             </Button>
             <Button
               onClick={handleAddDeal}
-              disabled={!formData.property_id || !formData.deal_value || !formData.closer_id}
+              disabled={!formData.property_id || !formData.deal_value || !formData.closer_id || isUploading}
               className="bg-accent text-accent-foreground hover:bg-accent/90"
             >
-              Create Deal
+              {isUploading ? 'Uploading...' : 'Create Deal'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -743,6 +829,37 @@ export function DealsPage() {
                 <div>
                   <h4 className="font-semibold mb-2">Notes</h4>
                   <p className="text-muted-foreground p-3 rounded-lg bg-muted/30">{viewingDeal.notes}</p>
+                </div>
+              )}
+
+              {/* Attachments */}
+              {viewingDeal.attachments && viewingDeal.attachments.length > 0 && (
+                <div>
+                  <h4 className="font-semibold mb-3 flex items-center gap-2">
+                    <Paperclip className="h-4 w-4 text-accent" />
+                    Attachments ({viewingDeal.attachments.length})
+                  </h4>
+                  <div className="space-y-2">
+                    {viewingDeal.attachments.map((attachment) => (
+                      <div key={attachment.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                        <FileText className="h-5 w-5 text-accent shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{attachment.name}</p>
+                          <p className="text-xs text-muted-foreground">{formatFileSize(attachment.size)}</p>
+                        </div>
+                        <a
+                          href={attachment.url}
+                          download={attachment.name}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2 rounded-lg hover:bg-muted transition-colors"
+                          title="Download file"
+                        >
+                          <Download className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                        </a>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 

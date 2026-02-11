@@ -1,6 +1,9 @@
+import { useState, useEffect } from 'react';
 import { Header } from '@/components/layout/Header';
 import { useAppStore } from '@/lib/store';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import type { DashboardStats } from '@/types';
 import {
   BarChart,
   Bar,
@@ -23,6 +26,7 @@ import {
   Handshake,
   Target,
   Calendar,
+  Loader2,
 } from 'lucide-react';
 
 const PROPERTY_TYPE_COLORS: Record<string, string> = {
@@ -46,8 +50,24 @@ const PROPERTY_TYPE_LABELS: Record<string, string> = {
 };
 
 export function AnalyticsPage() {
-  const { properties, leads, deals, users, getStats } = useAppStore();
-  const stats = getStats();
+  const { user, isAdmin } = useAuth();
+  const { properties, leads, deals, users, getStats, isLoading } = useAppStore();
+
+  const [stats, setStats] = useState<DashboardStats>({
+    total_properties: 0,
+    properties_sold: 0,
+    team_size: 0,
+    active_leads: 0,
+    total_value: 0,
+    available_properties: 0,
+  });
+
+  // Load stats from Supabase
+  useEffect(() => {
+    if (user) {
+      getStats(user.id, isAdmin).then(setStats);
+    }
+  }, [user, isAdmin, getStats]);
 
   // Property Types Distribution
   const propertyTypeData = Object.entries(
@@ -137,6 +157,17 @@ export function AnalyticsPage() {
   const avgDealValue = closedDeals.length > 0
     ? closedDeals.reduce((sum, d) => sum + d.deal_value, 0) / closedDeals.length
     : 0;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-accent mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading analytics...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
@@ -289,30 +320,36 @@ export function AnalyticsPage() {
             </CardHeader>
             <CardContent>
               <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={propertyTypeData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={100}
-                      paddingAngle={5}
-                      dataKey="value"
-                    >
-                      {propertyTypeData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'hsl(var(--card))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px',
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
+                {propertyTypeData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={propertyTypeData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={100}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {propertyTypeData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'hsl(var(--card))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px',
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center text-muted-foreground">
+                    No property data available
+                  </div>
+                )}
               </div>
               <div className="flex flex-wrap justify-center gap-4 mt-4 text-sm">
                 {propertyTypeData.map((entry) => (
@@ -407,24 +444,28 @@ export function AnalyticsPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {leadSourceData.map((source) => (
-                  <div key={source.source} className="flex items-center gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="text-sm font-medium">{source.source}</p>
-                        <p className="text-sm text-muted-foreground">{source.count} leads</p>
-                      </div>
-                      <div className="h-2 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-accent rounded-full"
-                          style={{
-                            width: `${(source.count / Math.max(...leadSourceData.map(s => s.count))) * 100}%`,
-                          }}
-                        />
+                {leadSourceData.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-4">No lead data available</p>
+                ) : (
+                  leadSourceData.map((source) => (
+                    <div key={source.source} className="flex items-center gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="text-sm font-medium">{source.source}</p>
+                          <p className="text-sm text-muted-foreground">{source.count} leads</p>
+                        </div>
+                        <div className="h-2 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-accent rounded-full"
+                            style={{
+                              width: `${(source.count / Math.max(...leadSourceData.map(s => s.count))) * 100}%`,
+                            }}
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>

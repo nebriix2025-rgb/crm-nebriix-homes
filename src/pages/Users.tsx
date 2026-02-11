@@ -87,7 +87,7 @@ export function UsersPage() {
     return matchesSearch && matchesRole && matchesStatus;
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Check for duplicate email
@@ -103,47 +103,43 @@ export function UsersPage() {
       return;
     }
 
-    if (editingUser) {
-      updateUser(editingUser.id, {
-        full_name: formData.full_name,
-        email: formData.email,
-        role: formData.role,
-        status: formData.status,
-        phone: formData.phone,
-      });
+    try {
+      if (editingUser) {
+        await updateUser(editingUser.id, {
+          full_name: formData.full_name,
+          email: formData.email,
+          role: formData.role,
+          status: formData.status,
+          phone: formData.phone,
+        });
+        toast({
+          title: 'User updated',
+          description: `${formData.full_name}'s profile has been updated.`,
+          variant: 'success',
+        });
+      } else {
+        await addUser({
+          full_name: formData.full_name,
+          email: formData.email,
+          role: formData.role,
+          status: formData.status,
+          phone: formData.phone,
+        });
+        toast({
+          title: 'User created',
+          description: `${formData.full_name} has been added to the team.`,
+          variant: 'success',
+        });
+      }
+      resetForm();
+    } catch (error) {
+      console.error('Failed to save user:', error);
       toast({
-        title: 'User updated',
-        description: `${formData.full_name}'s profile has been updated.`,
-        variant: 'success',
-      });
-    } else {
-      const newUser: User = {
-        id: Date.now().toString(),
-        full_name: formData.full_name,
-        email: formData.email,
-        role: formData.role,
-        status: formData.status,
-        phone: formData.phone,
-        password_hash: formData.password || 'demo123',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-      addUser(newUser);
-
-      // Also save to localStorage for auth
-      const storedUsers = localStorage.getItem('nebriix_users');
-      const existingUsers: User[] = storedUsers ? JSON.parse(storedUsers) : [];
-      existingUsers.push(newUser);
-      localStorage.setItem('nebriix_users', JSON.stringify(existingUsers));
-
-      toast({
-        title: 'User created',
-        description: `${formData.full_name} has been added to the team.`,
-        variant: 'success',
+        title: 'Error',
+        description: 'Failed to save user. Please try again.',
+        variant: 'destructive',
       });
     }
-
-    resetForm();
   };
 
   const resetForm = () => {
@@ -165,7 +161,7 @@ export function UsersPage() {
     setShowAddDialog(true);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deletingUser) return;
 
     if (deletingUser.id === currentUser?.id) {
@@ -178,24 +174,24 @@ export function UsersPage() {
       return;
     }
 
-    deleteUser(deletingUser.id);
-
-    // Also remove from localStorage
-    const storedUsers = localStorage.getItem('nebriix_users');
-    if (storedUsers) {
-      const users: User[] = JSON.parse(storedUsers);
-      const filtered = users.filter(u => u.id !== deletingUser.id);
-      localStorage.setItem('nebriix_users', JSON.stringify(filtered));
+    try {
+      await deleteUser(deletingUser.id);
+      toast({
+        title: 'User removed',
+        description: `${deletingUser.full_name} has been removed from the team.`,
+      });
+    } catch (error) {
+      console.error('Failed to delete user:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete user. Please try again.',
+        variant: 'destructive',
+      });
     }
-
-    toast({
-      title: 'User removed',
-      description: `${deletingUser.full_name} has been removed from the team.`,
-    });
     setDeletingUser(null);
   };
 
-  const handleToggleStatus = (user: User) => {
+  const handleToggleStatus = async (user: User) => {
     if (user.id === currentUser?.id) {
       toast({
         title: 'Cannot deactivate yourself',
@@ -205,23 +201,20 @@ export function UsersPage() {
       return;
     }
 
-    toggleUserStatus(user.id);
-
-    // Also update in localStorage
-    const storedUsers = localStorage.getItem('nebriix_users');
-    if (storedUsers) {
-      const users: User[] = JSON.parse(storedUsers);
-      const idx = users.findIndex(u => u.id === user.id);
-      if (idx >= 0) {
-        users[idx].status = users[idx].status === 'active' ? 'inactive' : 'active';
-        localStorage.setItem('nebriix_users', JSON.stringify(users));
-      }
+    try {
+      await toggleUserStatus(user.id);
+      toast({
+        title: `User ${user.status === 'active' ? 'deactivated' : 'activated'}`,
+        description: `${user.full_name}'s account has been ${user.status === 'active' ? 'deactivated' : 'activated'}.`,
+      });
+    } catch (error) {
+      console.error('Failed to toggle user status:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update user status. Please try again.',
+        variant: 'destructive',
+      });
     }
-
-    toast({
-      title: `User ${user.status === 'active' ? 'deactivated' : 'activated'}`,
-      description: `${user.full_name}'s account has been ${user.status === 'active' ? 'deactivated' : 'activated'}.`,
-    });
   };
 
   const getRoleColor = (role: UserRole) => {
