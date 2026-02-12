@@ -766,10 +766,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     return state.leads.filter(l => l.created_by === userId || l.assigned_to === userId);
   },
 
-  getDealsForUser: (userId, isAdmin) => {
+  getDealsForUser: (_userId, _isAdmin) => {
     const state = get();
-    if (isAdmin) return state.deals;
-    return state.deals.filter(d => d.created_by === userId || d.closer_id === userId);
+    // All users can see all deals - this is a CRM where agents need full visibility
+    // into all deals to understand property status and client relationships
+    return state.deals;
   },
 
   getActivitiesForUser: (userId, isAdmin) => {

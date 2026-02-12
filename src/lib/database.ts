@@ -403,21 +403,10 @@ export const dealService = {
     return data || [];
   },
 
-  async getByUser(userId: string, isAdmin: boolean): Promise<Deal[]> {
-    if (isAdmin) return this.getAll();
-
-    const { data, error } = await supabase
-      .from('deals')
-      .select(`
-        *,
-        property:properties(id, title, price, location, status),
-        lead:leads(id, name, email, phone),
-        closer:users!deals_closer_id_fkey(id, full_name, email, role)
-      `)
-      .or(`created_by.eq.${userId},closer_id.eq.${userId}`)
-      .order('created_at', { ascending: false });
-    if (error) throw error;
-    return data || [];
+  async getByUser(_userId: string, _isAdmin: boolean): Promise<Deal[]> {
+    // All users can see all deals - this is a CRM where agents need full visibility
+    // into all deals to understand property status and client relationships
+    return this.getAll();
   },
 
   async getById(id: string): Promise<Deal | null> {

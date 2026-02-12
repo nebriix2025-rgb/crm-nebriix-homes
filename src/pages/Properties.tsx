@@ -46,6 +46,8 @@ import {
   FileText,
   X,
   Download,
+  DollarSign,
+  Handshake,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -97,7 +99,7 @@ const propertyTypes: PropertyType[] = ['apartment', 'villa', 'townhouse', 'penth
 
 export function PropertiesPage() {
   const { user, isAdmin } = useAuth();
-  const { addProperty, deleteProperty, updateProperty, archiveProperty, getPropertiesForUser, getUserById } = useAppStore();
+  const { addProperty, deleteProperty, updateProperty, archiveProperty, getPropertiesForUser, getUserById, deals } = useAppStore();
   const [statusFilter, setStatusFilter] = useState<PropertyStatus | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -900,8 +902,76 @@ export function PropertiesPage() {
                   </div>
                 )}
 
+                {/* Related Deals Section */}
+                {(() => {
+                  const propertyDeals = deals.filter(d => d.property_id === viewingProperty.id);
+                  if (propertyDeals.length === 0) return null;
+
+                  const dealStatusColors: Record<string, string> = {
+                    pending: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+                    in_progress: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+                    closed: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+                    cancelled: 'bg-red-500/20 text-red-400 border-red-500/30',
+                  };
+
+                  const dealStatusLabels: Record<string, string> = {
+                    pending: 'Pending',
+                    in_progress: 'In Progress',
+                    closed: 'Closed',
+                    cancelled: 'Cancelled',
+                  };
+
+                  return (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Handshake className="h-4 w-4 text-accent" />
+                        <h4 className="font-semibold">Related Deals ({propertyDeals.length})</h4>
+                      </div>
+                      <div className="space-y-2">
+                        {propertyDeals.map((deal) => (
+                          <div key={deal.id} className="p-3 rounded-lg bg-muted/30 border border-border">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <Badge className={dealStatusColors[deal.status] || 'bg-gray-500/20 text-gray-400'}>
+                                    {dealStatusLabels[deal.status] || deal.status}
+                                  </Badge>
+                                  {deal.lead && (
+                                    <span className="text-sm text-muted-foreground">
+                                      Lead: {deal.lead.name}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-4 text-sm">
+                                  <span className="flex items-center gap-1">
+                                    <DollarSign className="h-3 w-3 text-accent" />
+                                    <span className="font-semibold text-accent">{formatPrice(deal.deal_value)}</span>
+                                  </span>
+                                  <span className="text-muted-foreground">
+                                    Commission: {formatPrice(deal.commission_amount || 0)} ({deal.commission_rate}%)
+                                  </span>
+                                </div>
+                                {deal.closer && (
+                                  <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                                    <Avatar className="h-5 w-5">
+                                      <AvatarFallback className="text-[10px] bg-accent/20 text-accent">
+                                        {getInitials(deal.closer.full_name)}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <span>Closer: {deal.closer.full_name}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 {/* Created Info */}
-                {isAdmin && viewingProperty.created_by && (
+                {viewingProperty.created_by && (
                   <div className="pt-4 border-t border-border flex items-center gap-2 text-sm text-muted-foreground">
                     {(() => {
                       const creator = getUserById(viewingProperty.created_by);
