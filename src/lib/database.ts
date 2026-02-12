@@ -119,18 +119,9 @@ export const propertyService = {
   },
 
   async getByUser(userId: string, isAdmin: boolean): Promise<Property[]> {
-    if (isAdmin) return this.getAll();
-
-    const { data, error } = await supabase
-      .from('properties')
-      .select(`
-        *,
-        creator:users!properties_created_by_fkey(id, full_name, email, role)
-      `)
-      .eq('created_by', userId)
-      .order('created_at', { ascending: false });
-    if (error) throw error;
-    return data || [];
+    // All users can see all published properties (requirement: Admin-Driven Content System)
+    // Users see all published content, not just their own creations
+    return this.getAll();
   },
 
   async getById(id: string): Promise<Property | null> {
