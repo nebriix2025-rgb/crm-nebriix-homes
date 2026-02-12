@@ -48,6 +48,7 @@ import {
   Download,
   DollarSign,
   Handshake,
+  Construction,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -119,6 +120,7 @@ export function PropertiesPage() {
     area_sqft: '',
     bedrooms: '',
     bathrooms: '',
+    is_offplan: false,
     owner_name: '',
     owner_phone: '',
   });
@@ -147,6 +149,7 @@ export function PropertiesPage() {
       area_sqft: '',
       bedrooms: '',
       bathrooms: '',
+      is_offplan: false,
       owner_name: '',
       owner_phone: '',
     });
@@ -272,6 +275,7 @@ export function PropertiesPage() {
         videos: uploadedVideoMedia,
         documents: uploadedDocMedia,
         features: [],
+        is_offplan: formData.is_offplan,
         owner_name: formData.owner_name || undefined,
         owner_phone: formData.owner_phone || undefined,
         created_by: user?.id || '',
@@ -303,6 +307,7 @@ export function PropertiesPage() {
         area_sqft: formData.area_sqft ? parseInt(formData.area_sqft) : undefined,
         bedrooms: formData.bedrooms ? parseInt(formData.bedrooms) : undefined,
         bathrooms: formData.bathrooms ? parseInt(formData.bathrooms) : undefined,
+        is_offplan: formData.is_offplan,
         owner_name: formData.owner_name || undefined,
         owner_phone: formData.owner_phone || undefined,
       });
@@ -328,6 +333,7 @@ export function PropertiesPage() {
       area_sqft: property.area_sqft?.toString() || '',
       bedrooms: property.bedrooms?.toString() || '',
       bathrooms: property.bathrooms?.toString() || '',
+      is_offplan: property.is_offplan || false,
       owner_name: property.owner_name || '',
       owner_phone: property.owner_phone || '',
     });
@@ -469,19 +475,54 @@ export function PropertiesPage() {
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="status">Status</Label>
-        <Select value={formData.status} onValueChange={(value: PropertyStatus) => setFormData(prev => ({ ...prev, status: value }))}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="available">Available</SelectItem>
-            <SelectItem value="under_offer">Under Offer</SelectItem>
-            <SelectItem value="sold">Sold</SelectItem>
-            <SelectItem value="rented">Rented</SelectItem>
-          </SelectContent>
-        </Select>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="status">Status</Label>
+          <Select value={formData.status} onValueChange={(value: PropertyStatus) => setFormData(prev => ({ ...prev, status: value }))}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="available">Available</SelectItem>
+              <SelectItem value="under_offer">Under Offer</SelectItem>
+              <SelectItem value="sold">Sold</SelectItem>
+              <SelectItem value="rented">Rented</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="is_offplan">Property Type</Label>
+          <div
+            className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+              formData.is_offplan
+                ? 'bg-amber-500/10 border-amber-500/50'
+                : 'bg-muted/30 border-border hover:border-muted-foreground/30'
+            }`}
+            onClick={() => setFormData(prev => ({ ...prev, is_offplan: !prev.is_offplan }))}
+          >
+            <div
+              className={`w-5 h-5 rounded flex items-center justify-center border-2 transition-colors ${
+                formData.is_offplan
+                  ? 'bg-amber-500 border-amber-500'
+                  : 'border-muted-foreground/50'
+              }`}
+            >
+              {formData.is_offplan && (
+                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </div>
+            <div>
+              <p className={`font-medium ${formData.is_offplan ? 'text-amber-400' : ''}`}>
+                {formData.is_offplan ? 'Off-Plan Property' : 'Ready Property'}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {formData.is_offplan ? 'Under construction / Not yet completed' : 'Ready for immediate move-in'}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -745,11 +786,17 @@ export function PropertiesPage() {
                 {/* Property Header */}
                 <div className="flex items-start justify-between">
                   <div>
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center flex-wrap gap-2 mb-2">
                       <Badge className={statusColors[viewingProperty.status]}>
                         {statusLabels[viewingProperty.status]}
                       </Badge>
                       <Badge variant="outline">{typeLabels[viewingProperty.type]}</Badge>
+                      {viewingProperty.is_offplan && (
+                        <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">
+                          <Construction className="h-3 w-3 mr-1" />
+                          Off-Plan
+                        </Badge>
+                      )}
                     </div>
                     <div className="flex items-center gap-1 text-muted-foreground">
                       <MapPin className="h-4 w-4" />
@@ -805,102 +852,152 @@ export function PropertiesPage() {
                   </div>
                 )}
 
-                {/* Media Section */}
-                {((viewingProperty.images && viewingProperty.images.length > 0) ||
-                  (viewingProperty.videos && viewingProperty.videos.length > 0) ||
-                  (viewingProperty.documents && viewingProperty.documents.length > 0)) && (
-                  <div className="space-y-4">
-                    <h4 className="font-semibold">Property Media</h4>
+                {/* Media Section - Always show for better UX */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold">Property Media</h4>
 
-                    {/* Images */}
-                    {viewingProperty.images && viewingProperty.images.length > 0 && (
-                      <div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <Image className="h-4 w-4 text-accent" />
-                          <span className="text-sm font-medium">Images ({viewingProperty.images.length})</span>
-                        </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                          {viewingProperty.images.map((img, idx) => (
-                            <div key={idx} className="aspect-square rounded-lg overflow-hidden bg-muted relative group">
-                              <img src={img} alt={`Property ${idx + 1}`} className="w-full h-full object-cover" />
+                  {/* Images */}
+                  {viewingProperty.images && viewingProperty.images.filter(img => img && img.trim()).length > 0 ? (
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Image className="h-4 w-4 text-accent" />
+                        <span className="text-sm font-medium">Images ({viewingProperty.images.filter(img => img && img.trim()).length})</span>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                        {viewingProperty.images.filter(img => img && img.trim()).map((img, idx) => (
+                          <div key={idx} className="aspect-square rounded-lg overflow-hidden bg-muted relative group">
+                            <img
+                              src={img}
+                              alt={`Property ${idx + 1}`}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect fill="%23374151" width="100" height="100"/><text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%239CA3AF" font-size="12">No Image</text></svg>';
+                              }}
+                            />
+                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <a
+                                href={img}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-2 rounded-full bg-white/20 hover:bg-white/30"
+                                title="View full size"
+                              >
+                                <Eye className="h-4 w-4 text-white" />
+                              </a>
                               <a
                                 href={img}
                                 download={`property-image-${idx + 1}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="p-2 rounded-full bg-white/20 hover:bg-white/30"
+                                title="Download"
                               >
-                                <Download className="h-5 w-5 text-white" />
+                                <Download className="h-4 w-4 text-white" />
                               </a>
                             </div>
-                          ))}
-                        </div>
+                          </div>
+                        ))}
                       </div>
-                    )}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/30 text-muted-foreground">
+                      <Image className="h-4 w-4" />
+                      <span className="text-sm">No images uploaded</span>
+                    </div>
+                  )}
 
-                    {/* Videos */}
-                    {viewingProperty.videos && viewingProperty.videos.length > 0 && (
-                      <div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <Video className="h-4 w-4 text-blue-400" />
-                          <span className="text-sm font-medium">Videos ({viewingProperty.videos.length})</span>
-                        </div>
-                        <div className="space-y-2">
-                          {viewingProperty.videos.map((vid) => (
-                            <div key={vid.id} className="flex items-center gap-3 p-2 rounded-lg bg-muted/50">
-                              <Video className="h-5 w-5 text-blue-400" />
-                              <div className="flex-1">
-                                <p className="text-sm">{vid.name}</p>
-                                <p className="text-xs text-muted-foreground">{formatFileSize(vid.size)}</p>
-                              </div>
+                  {/* Videos */}
+                  {viewingProperty.videos && viewingProperty.videos.length > 0 ? (
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Video className="h-4 w-4 text-blue-400" />
+                        <span className="text-sm font-medium">Videos ({viewingProperty.videos.length})</span>
+                      </div>
+                      <div className="space-y-2">
+                        {viewingProperty.videos.map((vid, idx) => (
+                          <div key={vid.id || idx} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted/70 transition-colors">
+                            <div className="h-12 w-12 rounded-lg bg-blue-500/20 flex items-center justify-center shrink-0">
+                              <Video className="h-6 w-6 text-blue-400" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{vid.name || 'Video file'}</p>
+                              <p className="text-xs text-muted-foreground">{vid.size ? formatFileSize(vid.size) : 'Unknown size'}</p>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <a
+                                href={vid.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-2 rounded-lg hover:bg-muted transition-colors"
+                                title="Play video"
+                              >
+                                <Eye className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                              </a>
                               <a
                                 href={vid.url}
                                 download={vid.name}
-                                target="_blank"
-                                rel="noopener noreferrer"
                                 className="p-2 rounded-lg hover:bg-muted transition-colors"
                                 title="Download video"
                               >
                                 <Download className="h-4 w-4 text-muted-foreground hover:text-foreground" />
                               </a>
                             </div>
-                          ))}
-                        </div>
+                          </div>
+                        ))}
                       </div>
-                    )}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/30 text-muted-foreground">
+                      <Video className="h-4 w-4" />
+                      <span className="text-sm">No videos uploaded</span>
+                    </div>
+                  )}
 
-                    {/* Documents */}
-                    {viewingProperty.documents && viewingProperty.documents.length > 0 && (
-                      <div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <FileText className="h-4 w-4 text-red-400" />
-                          <span className="text-sm font-medium">Documents ({viewingProperty.documents.length})</span>
-                        </div>
-                        <div className="space-y-2">
-                          {viewingProperty.documents.map((doc) => (
-                            <div key={doc.id} className="flex items-center gap-3 p-2 rounded-lg bg-muted/50">
-                              <FileText className="h-5 w-5 text-red-400" />
-                              <div className="flex-1">
-                                <p className="text-sm">{doc.name}</p>
-                                <p className="text-xs text-muted-foreground">{formatFileSize(doc.size)}</p>
-                              </div>
+                  {/* Documents */}
+                  {viewingProperty.documents && viewingProperty.documents.length > 0 ? (
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <FileText className="h-4 w-4 text-red-400" />
+                        <span className="text-sm font-medium">Documents ({viewingProperty.documents.length})</span>
+                      </div>
+                      <div className="space-y-2">
+                        {viewingProperty.documents.map((doc, idx) => (
+                          <div key={doc.id || idx} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted/70 transition-colors">
+                            <div className="h-12 w-12 rounded-lg bg-red-500/20 flex items-center justify-center shrink-0">
+                              <FileText className="h-6 w-6 text-red-400" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{doc.name || 'Document'}</p>
+                              <p className="text-xs text-muted-foreground">{doc.size ? formatFileSize(doc.size) : 'PDF Document'}</p>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <a
+                                href={doc.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-2 rounded-lg hover:bg-muted transition-colors"
+                                title="View document"
+                              >
+                                <Eye className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                              </a>
                               <a
                                 href={doc.url}
                                 download={doc.name}
-                                target="_blank"
-                                rel="noopener noreferrer"
                                 className="p-2 rounded-lg hover:bg-muted transition-colors"
                                 title="Download document"
                               >
                                 <Download className="h-4 w-4 text-muted-foreground hover:text-foreground" />
                               </a>
                             </div>
-                          ))}
-                        </div>
+                          </div>
+                        ))}
                       </div>
-                    )}
-                  </div>
-                )}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/30 text-muted-foreground">
+                      <FileText className="h-4 w-4" />
+                      <span className="text-sm">No documents uploaded</span>
+                    </div>
+                  )}
+                </div>
 
                 {/* Related Deals Section */}
                 {(() => {
@@ -1041,9 +1138,17 @@ export function PropertiesPage() {
                     />
                   ) : null}
                   <Building2 className={`h-16 w-16 text-accent/40 absolute ${property.images && property.images.length > 0 ? 'hidden' : ''}`} />
-                  <Badge className={`absolute top-3 left-3 ${statusColors[property.status]}`}>
-                    {statusLabels[property.status]}
-                  </Badge>
+                  <div className="absolute top-3 left-3 flex flex-col gap-1">
+                    <Badge className={statusColors[property.status]}>
+                      {statusLabels[property.status]}
+                    </Badge>
+                    {property.is_offplan && (
+                      <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">
+                        <Construction className="h-3 w-3 mr-1" />
+                        Off-Plan
+                      </Badge>
+                    )}
+                  </div>
                   <Badge variant="outline" className="absolute top-3 right-3 bg-background/80">
                     {typeLabels[property.type]}
                   </Badge>

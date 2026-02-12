@@ -45,6 +45,7 @@ export interface Property {
   documents?: PropertyMedia[];
   media?: PropertyMedia[];
   features: string[];
+  is_offplan?: boolean;
   owner_name?: string;
   owner_phone?: string;
   created_by: string;
