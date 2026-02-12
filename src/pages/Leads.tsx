@@ -391,7 +391,7 @@ export function LeadsPage() {
   );
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen overflow-y-auto">
       <Header
         title="Leads"
         subtitle="Manage your sales pipeline and leads"
@@ -491,7 +491,7 @@ export function LeadsPage() {
 
         {/* Pipeline View */}
         {viewMode === 'pipeline' ? (
-          <div className="flex gap-4 overflow-x-auto pb-4">
+          <div className="flex gap-4 overflow-x-auto pb-4 min-h-0">
             {pipelineStages.map((stage) => {
               const stageLeads = getLeadsByStage(stage.value);
               return (

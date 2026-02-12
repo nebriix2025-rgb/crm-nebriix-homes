@@ -44,9 +44,9 @@ export function DashboardLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
-      <main className={`transition-all duration-300 ${sidebarCollapsed ? 'pl-[70px]' : 'pl-64'}`}>
+      <main className={`transition-all duration-300 min-h-screen overflow-y-auto ${sidebarCollapsed ? 'pl-[70px]' : 'pl-64'}`}>
         <Outlet />
       </main>
     </div>

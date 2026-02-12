@@ -956,9 +956,21 @@ export function PropertiesPage() {
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
             {filteredProperties.map((property) => (
               <Card key={property.id} className="bg-card border-border overflow-hidden hover:border-accent/50 transition-colors group">
-                {/* Property Image Placeholder */}
-                <div className="h-48 bg-gradient-to-br from-accent/20 to-accent/5 flex items-center justify-center relative">
-                  <Building2 className="h-16 w-16 text-accent/40" />
+                {/* Property Image */}
+                <div className="h-48 bg-gradient-to-br from-accent/20 to-accent/5 flex items-center justify-center relative overflow-hidden">
+                  {property.images && property.images.length > 0 ? (
+                    <img
+                      src={property.images[0]}
+                      alt={property.title}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        // If image fails to load, show placeholder
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                      }}
+                    />
+                  ) : null}
+                  <Building2 className={`h-16 w-16 text-accent/40 absolute ${property.images && property.images.length > 0 ? 'hidden' : ''}`} />
                   <Badge className={`absolute top-3 left-3 ${statusColors[property.status]}`}>
                     {statusLabels[property.status]}
                   </Badge>

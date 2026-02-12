@@ -433,7 +433,12 @@ export const dealService = {
   },
 
   async create(deal: Omit<Deal, 'id' | 'created_at' | 'updated_at' | 'property' | 'lead' | 'closer' | 'commission_amount'>): Promise<Deal> {
-    const { data, error } = await supabase
+    // Use Promise.race with timeout to prevent hanging Supabase client
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Deal create timeout')), 10000);
+    });
+
+    const createPromise = supabase
       .from('deals')
       .insert(deal)
       .select(`
@@ -443,8 +448,51 @@ export const dealService = {
         closer:users!deals_closer_id_fkey(id, full_name, email, role)
       `)
       .single();
-    if (error) throw error;
-    return data;
+
+    try {
+      const result = await Promise.race([createPromise, timeoutPromise]);
+      if (result.error) throw result.error;
+      return result.data;
+    } catch (timeoutError) {
+      console.warn('Supabase client timeout on deal create, trying direct REST API...');
+      // Fallback to direct REST API
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token || supabaseKey;
+
+      const response = await fetch(`${supabaseUrl}/rest/v1/deals`, {
+        method: 'POST',
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify(deal)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to create deal: ${errorText}`);
+      }
+
+      const newDeal = (await response.json())[0];
+
+      // Fetch the complete deal with relations
+      const { data: fullDeal } = await supabase
+        .from('deals')
+        .select(`
+          *,
+          property:properties(id, title, price, location, status),
+          lead:leads(id, name, email, phone),
+          closer:users!deals_closer_id_fkey(id, full_name, email, role)
+        `)
+        .eq('id', newDeal.id)
+        .single();
+
+      return fullDeal || newDeal;
+    }
   },
 
   async update(id: string, updates: Partial<Deal>): Promise<Deal> {
@@ -455,7 +503,12 @@ export const dealService = {
       cleanUpdates.closed_at = new Date().toISOString();
     }
 
-    const { data, error } = await supabase
+    // Use Promise.race with timeout to prevent hanging Supabase client
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Deal update timeout')), 10000);
+    });
+
+    const updatePromise = supabase
       .from('deals')
       .update(cleanUpdates)
       .eq('id', id)
@@ -466,8 +519,49 @@ export const dealService = {
         closer:users!deals_closer_id_fkey(id, full_name, email, role)
       `)
       .single();
-    if (error) throw error;
-    return data;
+
+    try {
+      const result = await Promise.race([updatePromise, timeoutPromise]);
+      if (result.error) throw result.error;
+      return result.data;
+    } catch (timeoutError) {
+      console.warn('Supabase client timeout on deal update, trying direct REST API...');
+      // Fallback to direct REST API
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token || supabaseKey;
+
+      const response = await fetch(`${supabaseUrl}/rest/v1/deals?id=eq.${id}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify(cleanUpdates)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to update deal: ${errorText}`);
+      }
+
+      // Fetch the complete deal with relations
+      const { data: fullDeal } = await supabase
+        .from('deals')
+        .select(`
+          *,
+          property:properties(id, title, price, location, status),
+          lead:leads(id, name, email, phone),
+          closer:users!deals_closer_id_fkey(id, full_name, email, role)
+        `)
+        .eq('id', id)
+        .single();
+
+      return fullDeal!;
+    }
   }
 };
 
