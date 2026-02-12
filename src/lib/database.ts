@@ -141,8 +141,9 @@ export const propertyService = {
   },
 
   async create(property: Omit<Property, 'id' | 'created_at' | 'updated_at' | 'creator'>): Promise<Property> {
-    // Remove fields that don't exist in the database schema
-    const { videos, documents, media, ...dbProperty } = property as any;
+    // Remove only the computed/relation fields that don't exist in the database
+    // Keep videos and documents as they are valid JSONB columns
+    const { media, ...dbProperty } = property as any;
 
     // Use Promise.race with timeout to prevent hanging Supabase client
     const timeoutPromise = new Promise<never>((_, reject) => {
@@ -214,8 +215,9 @@ export const propertyService = {
   },
 
   async update(id: string, updates: Partial<Property>): Promise<Property> {
-    // Remove nested objects and fields that don't exist in the database schema
-    const { creator, videos, documents, media, ...cleanUpdates } = updates as any;
+    // Remove only the computed/relation fields
+    // Keep videos and documents as they are valid JSONB columns
+    const { creator, media, ...cleanUpdates } = updates as any;
 
     // Use Promise.race with timeout to prevent hanging Supabase client
     const timeoutPromise = new Promise<never>((_, reject) => {
