@@ -95,8 +95,13 @@ export function DashboardPage() {
       setCurrentUser(user.id);
       loadInitialData(user.id, isAdmin);
 
-      // Load stats
-      getStats(user.id, isAdmin).then(setStats);
+      // Load stats with error handling
+      getStats(user.id, isAdmin)
+        .then(setStats)
+        .catch((err) => {
+          console.error('Failed to load dashboard stats:', err);
+          // Keep default stats on error, user can still see the dashboard
+        });
     }
   }, [user, isAdmin, loadInitialData, setCurrentUser, getStats]);
 

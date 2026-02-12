@@ -221,12 +221,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error('Your account has been deactivated. Please contact an administrator.');
       }
 
-      // Update last login (don't wait for it)
-      supabase
-        .from('users')
-        .update({ last_login: new Date().toISOString() })
-        .eq('id', profile.id)
-        .then(() => {});
+      // Update last login (don't wait for it, but log errors)
+      (async () => {
+        try {
+          const { error } = await supabase
+            .from('users')
+            .update({ last_login: new Date().toISOString() })
+            .eq('id', profile.id);
+          if (error) {
+            console.error('Failed to update last_login:', error.message);
+          }
+        } catch (err) {
+          console.error('Error updating last_login:', err);
+        }
+      })();
 
       console.log('Setting user profile:', profile);
       setUser({ ...profile, last_login: new Date().toISOString() });

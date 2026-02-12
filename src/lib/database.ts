@@ -25,8 +25,11 @@ export const userService = {
   },
 
   async create(user: Omit<User, 'id' | 'created_at' | 'updated_at'> & { password?: string }): Promise<User> {
-    // Generate a random password if not provided
-    const password = user.password || 'Welcome@2024!';
+    // Require password for new users - no default password for security
+    if (!user.password || user.password.length < 8) {
+      throw new Error('Password is required and must be at least 8 characters');
+    }
+    const password = user.password;
 
     // First create the auth user using Supabase Auth API
     // Note: This requires the service role key for admin operations
