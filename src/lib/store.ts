@@ -67,6 +67,7 @@ interface AppState {
   deleteUser: (id: string) => Promise<void>;
   toggleUserStatus: (id: string) => Promise<User>;
   changeUserPassword: (id: string, newPassword: string) => Promise<void>;
+  sendPasswordResetEmail: (email: string) => Promise<void>;
 
   // Audit Log Actions
   addAuditLog: (log: Omit<AuditLog, 'id' | 'created_at' | 'user'>) => Promise<AuditLog>;
@@ -611,6 +612,24 @@ export const useAppStore = create<AppState>((set, get) => ({
       });
     } catch (error) {
       console.error('Error changing user password:', error);
+      throw error;
+    }
+  },
+
+  sendPasswordResetEmail: async (email) => {
+    try {
+      await userService.sendPasswordResetEmail(email);
+
+      // Log audit
+      await auditLogService.create({
+        user_id: get().currentUserId || '',
+        action: 'password_reset_requested',
+        entity_type: 'user',
+        entity_id: '',
+        new_value: { email, requested_by: 'admin' },
+      });
+    } catch (error) {
+      console.error('Error sending password reset email:', error);
       throw error;
     }
   },

@@ -109,16 +109,55 @@ export const userService = {
       throw new Error('Password must be at least 8 characters');
     }
 
-    // Use Supabase Admin API to update user password
-    // Note: This requires admin/service role key
-    const { error } = await supabase.auth.admin.updateUserById(userId, {
-      password: newPassword,
-    });
+    // Get the current session to check if we're changing our own password
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      throw new Error('Not authenticated');
+    }
 
+    // If changing own password, use updateUser (this works with anon key for current user)
+    if (session.user.id === userId) {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) {
+        console.error('Password update failed:', error);
+        throw new Error(error.message || 'Failed to update password');
+      }
+      return;
+    }
+
+    // For other users, try the Edge Function first, then fall back to error
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const response = await fetch(`${supabaseUrl}/functions/v1/change-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ userId, newPassword }),
+      });
+
+      if (response.ok) {
+        return;
+      }
+
+      // If Edge Function is not deployed or fails
+      const result = await response.json().catch(() => ({}));
+      throw new Error(result.error || 'Edge Function not available');
+    } catch (error) {
+      // Edge Function not available - provide guidance
+      console.error('Password change failed:', error);
+      throw new Error('To change other users\' passwords, the admin Edge Function must be deployed to Supabase. Please deploy the change-password function or use the Supabase Dashboard.');
+    }
+  },
+
+  async sendPasswordResetEmail(email: string): Promise<void> {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
     if (error) {
-      // If admin API fails, try the regular user update (only works for current user)
-      console.error('Admin password update failed:', error);
-      throw new Error('Failed to update password. Admin privileges may be required.');
+      console.error('Password reset email failed:', error);
+      throw new Error(error.message || 'Failed to send password reset email');
     }
   }
 };

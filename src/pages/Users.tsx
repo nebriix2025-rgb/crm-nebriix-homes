@@ -55,7 +55,7 @@ import { Navigate } from 'react-router-dom';
 
 export function UsersPage() {
   const { user: currentUser, isAdmin } = useAuth();
-  const { users, addUser, updateUser, deleteUser, toggleUserStatus, changeUserPassword, getUserActivitySummary } = useAppStore();
+  const { users, addUser, updateUser, deleteUser, toggleUserStatus, changeUserPassword, sendPasswordResetEmail, getUserActivitySummary } = useAppStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -65,6 +65,7 @@ export function UsersPage() {
   const [deletingUser, setDeletingUser] = useState<User | null>(null);
   const [changingPasswordUser, setChangingPasswordUser] = useState<User | null>(null);
   const [newPassword, setNewPassword] = useState('');
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -207,6 +208,7 @@ export function UsersPage() {
       return;
     }
 
+    setIsChangingPassword(true);
     try {
       await changeUserPassword(changingPasswordUser.id, newPassword);
       toast({
@@ -216,13 +218,49 @@ export function UsersPage() {
       });
       setChangingPasswordUser(null);
       setNewPassword('');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to change password:', error);
+      // Check if it's the Edge Function not deployed error
+      if (error.message?.includes('Edge Function')) {
+        toast({
+          title: 'Direct password change not available',
+          description: 'Use "Send Reset Email" to let the user reset their own password.',
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Error',
+          description: error.message || 'Failed to change password.',
+          variant: 'destructive',
+        });
+      }
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
+  const handleSendResetEmail = async () => {
+    if (!changingPasswordUser) return;
+
+    setIsChangingPassword(true);
+    try {
+      await sendPasswordResetEmail(changingPasswordUser.email);
+      toast({
+        title: 'Reset email sent',
+        description: `Password reset email sent to ${changingPasswordUser.email}`,
+        variant: 'success',
+      });
+      setChangingPasswordUser(null);
+      setNewPassword('');
+    } catch (error: any) {
+      console.error('Failed to send reset email:', error);
       toast({
         title: 'Error',
-        description: 'Failed to change password. Admin privileges may be required.',
+        description: error.message || 'Failed to send password reset email.',
         variant: 'destructive',
       });
+    } finally {
+      setIsChangingPassword(false);
     }
   };
 
@@ -734,7 +772,9 @@ export function UsersPage() {
               Change Password
             </DialogTitle>
             <DialogDescription>
-              Set a new password for {changingPasswordUser?.full_name}. The password must be at least 8 characters.
+              {changingPasswordUser?.id === currentUser?.id
+                ? 'Set a new password for your account.'
+                : `Change password for ${changingPasswordUser?.full_name} or send them a reset link.`}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -748,22 +788,40 @@ export function UsersPage() {
                 placeholder="Enter new password (min 8 characters)"
                 minLength={8}
                 required
+                disabled={isChangingPassword}
               />
               <p className="text-xs text-muted-foreground">
                 Password must be at least 8 characters long.
               </p>
             </div>
+            {changingPasswordUser?.id !== currentUser?.id && (
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  <strong>Note:</strong> To change another user's password directly, the admin Edge Function must be deployed.
+                  Alternatively, you can send a password reset email to let them reset it themselves.
+                </p>
+              </div>
+            )}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setChangingPasswordUser(null); setNewPassword(''); }}>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => { setChangingPasswordUser(null); setNewPassword(''); }} disabled={isChangingPassword}>
               Cancel
             </Button>
+            {changingPasswordUser?.id !== currentUser?.id && (
+              <Button
+                variant="secondary"
+                onClick={handleSendResetEmail}
+                disabled={isChangingPassword}
+              >
+                {isChangingPassword ? 'Sending...' : 'Send Reset Email'}
+              </Button>
+            )}
             <Button
               onClick={handleChangePassword}
               className="bg-accent text-accent-foreground hover:bg-accent/90"
-              disabled={newPassword.length < 8}
+              disabled={newPassword.length < 8 || isChangingPassword}
             >
-              Change Password
+              {isChangingPassword ? 'Changing...' : 'Change Password'}
             </Button>
           </DialogFooter>
         </DialogContent>
