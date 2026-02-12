@@ -147,7 +147,12 @@ export const propertyService = {
   },
 
   async create(property: Omit<Property, 'id' | 'created_at' | 'updated_at' | 'creator'>): Promise<Property> {
-    const { data, error } = await supabase
+    // Use Promise.race with timeout to prevent hanging Supabase client
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Property create timeout')), 10000);
+    });
+
+    const createPromise = supabase
       .from('properties')
       .insert(property)
       .select(`
@@ -155,15 +160,72 @@ export const propertyService = {
         creator:users!properties_created_by_fkey(id, full_name, email, role)
       `)
       .single();
-    if (error) throw error;
-    return data;
+
+    try {
+      const result = await Promise.race([createPromise, timeoutPromise]);
+      if (result.error) throw result.error;
+      return result.data;
+    } catch (timeoutError) {
+      console.warn('Supabase client timeout on property create, trying direct REST API...');
+
+      // Fallback to direct REST API
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      // Get current session for auth token
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token || supabaseKey;
+
+      const response = await fetch(`${supabaseUrl}/rest/v1/properties`, {
+        method: 'POST',
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify(property)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `REST API error: ${response.status}`);
+      }
+
+      const properties = await response.json();
+      const newProperty = Array.isArray(properties) ? properties[0] : properties;
+
+      // Fetch creator info separately
+      if (newProperty && newProperty.created_by) {
+        const creatorResponse = await fetch(
+          `${supabaseUrl}/rest/v1/users?id=eq.${newProperty.created_by}&select=id,full_name,email,role`,
+          {
+            headers: {
+              'apikey': supabaseKey,
+              'Authorization': `Bearer ${accessToken}`,
+            }
+          }
+        );
+        if (creatorResponse.ok) {
+          const creators = await creatorResponse.json();
+          newProperty.creator = creators[0] || null;
+        }
+      }
+
+      return newProperty;
+    }
   },
 
   async update(id: string, updates: Partial<Property>): Promise<Property> {
     // Remove nested objects that shouldn't be updated directly
     const { creator, ...cleanUpdates } = updates;
 
-    const { data, error } = await supabase
+    // Use Promise.race with timeout to prevent hanging Supabase client
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Property update timeout')), 10000);
+    });
+
+    const updatePromise = supabase
       .from('properties')
       .update(cleanUpdates)
       .eq('id', id)
@@ -172,8 +234,59 @@ export const propertyService = {
         creator:users!properties_created_by_fkey(id, full_name, email, role)
       `)
       .single();
-    if (error) throw error;
-    return data;
+
+    try {
+      const result = await Promise.race([updatePromise, timeoutPromise]);
+      if (result.error) throw result.error;
+      return result.data;
+    } catch (timeoutError) {
+      console.warn('Supabase client timeout on property update, trying direct REST API...');
+
+      // Fallback to direct REST API
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token || supabaseKey;
+
+      const response = await fetch(`${supabaseUrl}/rest/v1/properties?id=eq.${id}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify(cleanUpdates)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `REST API error: ${response.status}`);
+      }
+
+      const properties = await response.json();
+      const updatedProperty = Array.isArray(properties) ? properties[0] : properties;
+
+      // Fetch creator info separately
+      if (updatedProperty && updatedProperty.created_by) {
+        const creatorResponse = await fetch(
+          `${supabaseUrl}/rest/v1/users?id=eq.${updatedProperty.created_by}&select=id,full_name,email,role`,
+          {
+            headers: {
+              'apikey': supabaseKey,
+              'Authorization': `Bearer ${accessToken}`,
+            }
+          }
+        );
+        if (creatorResponse.ok) {
+          const creators = await creatorResponse.json();
+          updatedProperty.creator = creators[0] || null;
+        }
+      }
+
+      return updatedProperty;
+    }
   },
 
   async delete(id: string): Promise<void> {
