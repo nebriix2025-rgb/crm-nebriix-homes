@@ -46,6 +46,7 @@ import {
   Users as UsersIcon,
   Handshake,
   AlertTriangle,
+  Key,
 } from 'lucide-react';
 import { formatDate, getInitials, cn } from '@/lib/utils';
 import { toast } from '@/hooks/useToast';
@@ -54,7 +55,7 @@ import { Navigate } from 'react-router-dom';
 
 export function UsersPage() {
   const { user: currentUser, isAdmin } = useAuth();
-  const { users, addUser, updateUser, deleteUser, toggleUserStatus, getUserActivitySummary } = useAppStore();
+  const { users, addUser, updateUser, deleteUser, toggleUserStatus, changeUserPassword, getUserActivitySummary } = useAppStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -62,6 +63,8 @@ export function UsersPage() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [viewingUser, setViewingUser] = useState<User | null>(null);
   const [deletingUser, setDeletingUser] = useState<User | null>(null);
+  const [changingPasswordUser, setChangingPasswordUser] = useState<User | null>(null);
+  const [newPassword, setNewPassword] = useState('');
 
   // Form state
   const [formData, setFormData] = useState({
@@ -124,6 +127,7 @@ export function UsersPage() {
           role: formData.role,
           status: formData.status,
           phone: formData.phone,
+          password: formData.password || 'demo123!', // Default password if not provided
         });
         toast({
           title: 'User created',
@@ -189,6 +193,37 @@ export function UsersPage() {
       });
     }
     setDeletingUser(null);
+  };
+
+  const handleChangePassword = async () => {
+    if (!changingPasswordUser) return;
+
+    if (!newPassword || newPassword.length < 8) {
+      toast({
+        title: 'Invalid password',
+        description: 'Password must be at least 8 characters.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      await changeUserPassword(changingPasswordUser.id, newPassword);
+      toast({
+        title: 'Password changed',
+        description: `${changingPasswordUser.full_name}'s password has been updated.`,
+        variant: 'success',
+      });
+      setChangingPasswordUser(null);
+      setNewPassword('');
+    } catch (error) {
+      console.error('Failed to change password:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to change password. Admin privileges may be required.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleToggleStatus = async (user: User) => {
@@ -427,6 +462,9 @@ export function UsersPage() {
                               <DropdownMenuItem onClick={() => handleEdit(user)}>
                                 <Edit className="h-4 w-4 mr-2" /> Edit
                               </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => setChangingPasswordUser(user)}>
+                                <Key className="h-4 w-4 mr-2" /> Change Password
+                              </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={() => handleToggleStatus(user)}>
                                 {user.status === 'active' ? (
@@ -542,15 +580,16 @@ export function UsersPage() {
               </div>
               {!editingUser && (
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">Password *</Label>
                   <Input
                     id="password"
                     type="password"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    placeholder="Leave empty for default (demo123)"
+                    placeholder="Min 8 characters (default: demo123!)"
+                    minLength={8}
                   />
-                  <p className="text-xs text-muted-foreground">Default password: demo123</p>
+                  <p className="text-xs text-muted-foreground">Default password if left empty: demo123!</p>
                 </div>
               )}
             </div>
@@ -681,6 +720,50 @@ export function UsersPage() {
             </Button>
             <Button variant="destructive" onClick={handleDelete}>
               Delete User
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Change Password Dialog */}
+      <Dialog open={!!changingPasswordUser} onOpenChange={() => { setChangingPasswordUser(null); setNewPassword(''); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Key className="h-5 w-5 text-accent" />
+              Change Password
+            </DialogTitle>
+            <DialogDescription>
+              Set a new password for {changingPasswordUser?.full_name}. The password must be at least 8 characters.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new_password">New Password *</Label>
+              <Input
+                id="new_password"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter new password (min 8 characters)"
+                minLength={8}
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Password must be at least 8 characters long.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setChangingPasswordUser(null); setNewPassword(''); }}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleChangePassword}
+              className="bg-accent text-accent-foreground hover:bg-accent/90"
+              disabled={newPassword.length < 8}
+            >
+              Change Password
             </Button>
           </DialogFooter>
         </DialogContent>

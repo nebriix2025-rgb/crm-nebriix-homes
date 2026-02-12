@@ -62,10 +62,11 @@ interface AppState {
   // User Actions
   setUsers: (users: User[]) => void;
   loadUsers: () => Promise<void>;
-  addUser: (user: Omit<User, 'id' | 'created_at' | 'updated_at'>) => Promise<User>;
+  addUser: (user: Omit<User, 'id' | 'created_at' | 'updated_at'> & { password?: string }) => Promise<User>;
   updateUser: (id: string, updates: Partial<User>) => Promise<User>;
   deleteUser: (id: string) => Promise<void>;
   toggleUserStatus: (id: string) => Promise<User>;
+  changeUserPassword: (id: string, newPassword: string) => Promise<void>;
 
   // Audit Log Actions
   addAuditLog: (log: Omit<AuditLog, 'id' | 'created_at' | 'user'>) => Promise<AuditLog>;
@@ -591,6 +592,25 @@ export const useAppStore = create<AppState>((set, get) => ({
       return updatedUser;
     } catch (error) {
       console.error('Error toggling user status:', error);
+      throw error;
+    }
+  },
+
+  changeUserPassword: async (id, newPassword) => {
+    try {
+      const user = get().users.find(u => u.id === id);
+      await userService.changePassword(id, newPassword);
+
+      // Log audit
+      await auditLogService.create({
+        user_id: get().currentUserId || '',
+        action: 'password_changed',
+        entity_type: 'user',
+        entity_id: id,
+        new_value: { user_name: user?.full_name, changed_by: 'admin' },
+      });
+    } catch (error) {
+      console.error('Error changing user password:', error);
       throw error;
     }
   },

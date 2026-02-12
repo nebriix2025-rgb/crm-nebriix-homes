@@ -102,6 +102,24 @@ export const userService = {
 
   async toggleStatus(id: string, newStatus: 'active' | 'inactive'): Promise<User> {
     return this.update(id, { status: newStatus });
+  },
+
+  async changePassword(userId: string, newPassword: string): Promise<void> {
+    if (!newPassword || newPassword.length < 8) {
+      throw new Error('Password must be at least 8 characters');
+    }
+
+    // Use Supabase Admin API to update user password
+    // Note: This requires admin/service role key
+    const { error } = await supabase.auth.admin.updateUserById(userId, {
+      password: newPassword,
+    });
+
+    if (error) {
+      // If admin API fails, try the regular user update (only works for current user)
+      console.error('Admin password update failed:', error);
+      throw new Error('Failed to update password. Admin privileges may be required.');
+    }
   }
 };
 
