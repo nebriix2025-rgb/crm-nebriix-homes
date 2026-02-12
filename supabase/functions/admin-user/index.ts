@@ -1,0 +1,156 @@
+// Supabase Edge Function for admin user operations (requires service role key)
+// Handles: password change, user deletion
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+Deno.serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
+  try {
+    // Get the authorization header to verify the caller is authenticated
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Missing authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Create Supabase clients
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+
+    // Verify the caller using their JWT
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    })
+
+    const { data: { user: caller }, error: authError } = await userClient.auth.getUser()
+    if (authError || !caller) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Check if the caller is an admin
+    const { data: callerProfile, error: profileError } = await userClient
+      .from('users')
+      .select('role')
+      .eq('id', caller.id)
+      .single()
+
+    if (profileError || callerProfile?.role !== 'admin') {
+      return new Response(
+        JSON.stringify({ error: 'Only admins can perform this operation' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Parse the request body
+    const { action, userId, newPassword } = await req.json()
+
+    // Create admin client with service role key
+    const adminClient = createClient(supabaseUrl, supabaseServiceKey)
+
+    switch (action) {
+      case 'change_password': {
+        if (!userId || !newPassword) {
+          return new Response(
+            JSON.stringify({ error: 'Missing userId or newPassword' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+
+        if (newPassword.length < 8) {
+          return new Response(
+            JSON.stringify({ error: 'Password must be at least 8 characters' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+
+        const { error: updateError } = await adminClient.auth.admin.updateUserById(
+          userId,
+          { password: newPassword }
+        )
+
+        if (updateError) {
+          console.error('Error updating password:', updateError)
+          return new Response(
+            JSON.stringify({ error: updateError.message }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+
+        return new Response(
+          JSON.stringify({ success: true, message: 'Password updated successfully' }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      case 'delete_user': {
+        if (!userId) {
+          return new Response(
+            JSON.stringify({ error: 'Missing userId' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+
+        // Prevent self-deletion
+        if (userId === caller.id) {
+          return new Response(
+            JSON.stringify({ error: 'Cannot delete your own account' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+
+        // First delete from users table (profile)
+        const { error: profileDeleteError } = await adminClient
+          .from('users')
+          .delete()
+          .eq('id', userId)
+
+        if (profileDeleteError) {
+          console.error('Error deleting user profile:', profileDeleteError)
+          // Continue to try deleting auth user anyway
+        }
+
+        // Then delete from auth.users
+        const { error: authDeleteError } = await adminClient.auth.admin.deleteUser(userId)
+
+        if (authDeleteError) {
+          console.error('Error deleting auth user:', authDeleteError)
+          return new Response(
+            JSON.stringify({ error: authDeleteError.message }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+
+        return new Response(
+          JSON.stringify({ success: true, message: 'User deleted successfully' }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      default:
+        return new Response(
+          JSON.stringify({ error: 'Invalid action. Supported: change_password, delete_user' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+    }
+  } catch (error) {
+    console.error('Error:', error)
+    return new Response(
+      JSON.stringify({ error: 'Internal server error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+})

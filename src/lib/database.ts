@@ -91,8 +91,36 @@ export const userService = {
   },
 
   async delete(id: string): Promise<void> {
-    // Note: This only deletes the profile, not the auth user
-    // Deleting auth users requires admin API access
+    // Get the current session
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      throw new Error('Not authenticated');
+    }
+
+    // Try to use Edge Function for complete deletion (auth + profile)
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const response = await fetch(`${supabaseUrl}/functions/v1/admin-user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ action: 'delete_user', userId: id }),
+      });
+
+      if (response.ok) {
+        return; // Successfully deleted via Edge Function
+      }
+
+      // If Edge Function fails, fall back to profile-only deletion
+      const result = await response.json().catch(() => ({}));
+      console.warn('Edge Function delete failed, falling back to profile deletion:', result);
+    } catch (error) {
+      console.warn('Edge Function not available, falling back to profile deletion:', error);
+    }
+
+    // Fallback: Delete only the profile (user can still exist in auth)
     const { error } = await supabase
       .from('users')
       .delete()
@@ -128,13 +156,13 @@ export const userService = {
     // For other users, try the Edge Function first, then fall back to error
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const response = await fetch(`${supabaseUrl}/functions/v1/change-password`, {
+      const response = await fetch(`${supabaseUrl}/functions/v1/admin-user`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ userId, newPassword }),
+        body: JSON.stringify({ action: 'change_password', userId, newPassword }),
       });
 
       if (response.ok) {
@@ -147,7 +175,7 @@ export const userService = {
     } catch (error) {
       // Edge Function not available - provide guidance
       console.error('Password change failed:', error);
-      throw new Error('To change other users\' passwords, the admin Edge Function must be deployed to Supabase. Please deploy the change-password function or use the Supabase Dashboard.');
+      throw new Error('To change other users\' passwords, the admin Edge Function must be deployed to Supabase. Please deploy the admin-user function or use the Supabase Dashboard.');
     }
   },
 
