@@ -247,9 +247,9 @@ export function UsersPage() {
     <div className="min-h-screen">
       <Header title="User Management" subtitle="Manage team members and permissions" />
 
-      <div className="p-6 space-y-6">
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
         {/* Stats */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           <Card className="bg-card border-border">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -619,22 +619,22 @@ export function UsersPage() {
                 <h4 className="font-medium mb-3 flex items-center gap-2">
                   <Activity className="h-4 w-4" /> Activity Summary
                 </h4>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-3 gap-2 sm:gap-4">
                   {(() => {
                     const summary = getUserActivitySummary(viewingUser.id);
                     return (
                       <>
-                        <div className="text-center p-3 rounded-lg bg-muted/50">
-                          <p className="text-2xl font-bold">{summary.properties}</p>
-                          <p className="text-xs text-muted-foreground">Properties</p>
+                        <div className="text-center p-2 sm:p-3 rounded-lg bg-muted/50">
+                          <p className="text-xl sm:text-2xl font-bold">{summary.properties}</p>
+                          <p className="text-[10px] sm:text-xs text-muted-foreground">Properties</p>
                         </div>
-                        <div className="text-center p-3 rounded-lg bg-muted/50">
-                          <p className="text-2xl font-bold">{summary.leads}</p>
-                          <p className="text-xs text-muted-foreground">Leads</p>
+                        <div className="text-center p-2 sm:p-3 rounded-lg bg-muted/50">
+                          <p className="text-xl sm:text-2xl font-bold">{summary.leads}</p>
+                          <p className="text-[10px] sm:text-xs text-muted-foreground">Leads</p>
                         </div>
-                        <div className="text-center p-3 rounded-lg bg-muted/50">
-                          <p className="text-2xl font-bold">{summary.deals}</p>
-                          <p className="text-xs text-muted-foreground">Deals</p>
+                        <div className="text-center p-2 sm:p-3 rounded-lg bg-muted/50">
+                          <p className="text-xl sm:text-2xl font-bold">{summary.deals}</p>
+                          <p className="text-[10px] sm:text-xs text-muted-foreground">Deals</p>
                         </div>
                       </>
                     );

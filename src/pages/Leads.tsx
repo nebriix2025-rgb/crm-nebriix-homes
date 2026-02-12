@@ -397,9 +397,9 @@ export function LeadsPage() {
         subtitle="Manage your sales pipeline and leads"
       />
 
-      <div className="p-6 space-y-6">
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
         {/* Summary Stats */}
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
           <Card className="bg-card border-border">
             <CardContent className="p-4">
               <p className="text-sm text-muted-foreground">Total Leads</p>
@@ -491,11 +491,11 @@ export function LeadsPage() {
 
         {/* Pipeline View */}
         {viewMode === 'pipeline' ? (
-          <div className="flex gap-4 overflow-x-auto pb-4 min-h-0">
+          <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 min-h-0 -mx-4 px-4 sm:mx-0 sm:px-0">
             {pipelineStages.map((stage) => {
               const stageLeads = getLeadsByStage(stage.value);
               return (
-                <div key={stage.value} className="flex-shrink-0 w-72">
+                <div key={stage.value} className="flex-shrink-0 w-[280px] sm:w-72">
                   <Card className="bg-card border-border">
                     <CardHeader className="pb-3">
                       <CardTitle className="text-sm flex items-center justify-between">
@@ -640,7 +640,7 @@ export function LeadsPage() {
                       </div>
 
                       {/* Lead Details */}
-                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:w-auto">
+                      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4 lg:w-auto">
                         <div>
                           <p className="text-xs text-muted-foreground flex items-center gap-1">
                             <DollarSign className="h-3 w-3" /> Budget

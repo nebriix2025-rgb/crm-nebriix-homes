@@ -639,9 +639,9 @@ export function PropertiesPage() {
         subtitle="Browse and manage your property listings"
       />
 
-      <div className="p-6 space-y-6">
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
         {/* Summary Stats */}
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
           <Card className="bg-card border-border">
             <CardContent className="p-4">
               <p className="text-sm text-muted-foreground">Total Properties</p>
@@ -760,7 +760,7 @@ export function PropertiesPage() {
                 </div>
 
                 {/* Property Details Grid */}
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                   {viewingProperty.bedrooms && (
                     <div className="p-3 rounded-lg bg-muted/50 text-center">
                       <Bed className="h-5 w-5 mx-auto mb-1 text-accent" />
@@ -819,7 +819,7 @@ export function PropertiesPage() {
                           <Image className="h-4 w-4 text-accent" />
                           <span className="text-sm font-medium">Images ({viewingProperty.images.length})</span>
                         </div>
-                        <div className="grid grid-cols-4 gap-2">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                           {viewingProperty.images.map((img, idx) => (
                             <div key={idx} className="aspect-square rounded-lg overflow-hidden bg-muted relative group">
                               <img src={img} alt={`Property ${idx + 1}`} className="w-full h-full object-cover" />
@@ -1023,7 +1023,7 @@ export function PropertiesPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
             {filteredProperties.map((property) => (
               <Card key={property.id} className="bg-card border-border overflow-hidden hover:border-accent/50 transition-colors group">
                 {/* Property Image */}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
+import { MobileNav } from './MobileNav';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppStore } from '@/lib/store';
 
@@ -8,6 +9,7 @@ export function DashboardLayout() {
   const { isAuthenticated, isLoading, user } = useAuth();
   const { setCurrentUser } = useAppStore();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Sync current user to the store for data isolation
   useEffect(() => {
@@ -17,6 +19,11 @@ export function DashboardLayout() {
       setCurrentUser(null);
     }
   }, [user, setCurrentUser]);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, []);
 
   // Show loading while checking auth
   if (isLoading) {
@@ -45,8 +52,20 @@ export function DashboardLayout() {
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
+      {/* Desktop Sidebar - hidden on mobile */}
       <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
-      <main className={`transition-all duration-300 min-h-screen overflow-y-auto ${sidebarCollapsed ? 'pl-[70px]' : 'pl-64'}`}>
+
+      {/* Mobile Navigation */}
+      <MobileNav isOpen={mobileMenuOpen} onToggle={() => setMobileMenuOpen(!mobileMenuOpen)} />
+
+      {/* Main Content */}
+      <main className={`
+        transition-all duration-300 min-h-screen overflow-y-auto
+        pt-14 md:pt-0
+        px-0
+        md:pl-[70px] lg:pl-64
+        ${sidebarCollapsed ? 'md:pl-[70px]' : 'md:pl-64 lg:pl-64'}
+      `}>
         <Outlet />
       </main>
     </div>

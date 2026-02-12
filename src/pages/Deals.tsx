@@ -446,9 +446,9 @@ export function DealsPage() {
         subtitle="Track and manage your property deals"
       />
 
-      <div className="p-6 space-y-6">
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
         {/* Summary Stats */}
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
           <Card className="bg-card border-border">
             <CardContent className="p-4">
               <p className="text-sm text-muted-foreground">Total Deals</p>
@@ -585,7 +585,7 @@ export function DealsPage() {
                     </div>
 
                     {/* Deal Details */}
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:w-auto">
+                    <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4 lg:w-auto">
                       <div>
                         <p className="text-xs text-muted-foreground flex items-center gap-1">
                           <DollarSign className="h-3 w-3" /> Deal Value

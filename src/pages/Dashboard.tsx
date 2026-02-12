@@ -241,9 +241,9 @@ export function DashboardPage() {
         subtitle="Here's an overview of your real estate portfolio"
       />
 
-      <div className="p-6 space-y-6">
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
         {/* Stats Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           {statCards.map((stat, index) => {
             const Icon = stat.icon;
             return (
@@ -283,7 +283,7 @@ export function DashboardPage() {
         </div>
 
         {/* Middle Row: Recent Properties & Recent Activity */}
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
           {/* Recent Properties */}
           <Card className="bg-card border-border gold-border overflow-hidden">
             <CardHeader className="pb-3 flex flex-row items-center justify-between">
@@ -429,7 +429,7 @@ export function DashboardPage() {
                 </Link>
               </div>
             ) : (
-              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 {recentLeads.map((lead) => (
                   <div
                     key={lead.id}
@@ -478,7 +478,7 @@ export function DashboardPage() {
         </Card>
 
         {/* Bottom Row: Commission Calculator & Account Settings */}
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
           {/* Commission Calculator */}
           <Card className="bg-card border-border gold-border overflow-hidden">
             <CardHeader className="pb-3">
