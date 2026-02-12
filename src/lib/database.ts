@@ -147,6 +147,9 @@ export const propertyService = {
   },
 
   async create(property: Omit<Property, 'id' | 'created_at' | 'updated_at' | 'creator'>): Promise<Property> {
+    // Remove fields that don't exist in the database schema
+    const { videos, documents, media, ...dbProperty } = property as any;
+
     // Use Promise.race with timeout to prevent hanging Supabase client
     const timeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(() => reject(new Error('Property create timeout')), 10000);
@@ -154,7 +157,7 @@ export const propertyService = {
 
     const createPromise = supabase
       .from('properties')
-      .insert(property)
+      .insert(dbProperty)
       .select(`
         *,
         creator:users!properties_created_by_fkey(id, full_name, email, role)
@@ -184,7 +187,7 @@ export const propertyService = {
           'Content-Type': 'application/json',
           'Prefer': 'return=representation'
         },
-        body: JSON.stringify(property)
+        body: JSON.stringify(dbProperty)
       });
 
       if (!response.ok) {
@@ -217,8 +220,8 @@ export const propertyService = {
   },
 
   async update(id: string, updates: Partial<Property>): Promise<Property> {
-    // Remove nested objects that shouldn't be updated directly
-    const { creator, ...cleanUpdates } = updates;
+    // Remove nested objects and fields that don't exist in the database schema
+    const { creator, videos, documents, media, ...cleanUpdates } = updates as any;
 
     // Use Promise.race with timeout to prevent hanging Supabase client
     const timeoutPromise = new Promise<never>((_, reject) => {
