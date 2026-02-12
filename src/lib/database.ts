@@ -230,11 +230,9 @@ export const propertyService = {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { media, videos, documents, is_offplan, ...dbProperty } = property as any;
 
-    // Add back the new fields only if they have values (to support gradual schema updates)
+    // For now, skip the new fields entirely until schema cache is updated
+    // TODO: Re-enable once schema cache has propagated
     const propertyData: Record<string, unknown> = { ...dbProperty };
-    if (is_offplan !== undefined) propertyData.is_offplan = is_offplan;
-    if (videos && videos.length > 0) propertyData.videos = videos;
-    if (documents && documents.length > 0) propertyData.documents = documents;
 
     // Use Promise.race with timeout to prevent hanging Supabase client
     const timeoutPromise = new Promise<never>((_, reject) => {
@@ -310,11 +308,9 @@ export const propertyService = {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { creator, media, videos, documents, is_offplan, ...cleanUpdates } = updates as any;
 
-    // Add back the new fields only if they are being explicitly updated
+    // For now, skip the new fields entirely until schema cache is updated
+    // TODO: Re-enable once schema cache has propagated
     const updateData: Record<string, unknown> = { ...cleanUpdates };
-    if (is_offplan !== undefined) updateData.is_offplan = is_offplan;
-    if (videos !== undefined) updateData.videos = videos;
-    if (documents !== undefined) updateData.documents = documents;
 
     // Use Promise.race with timeout to prevent hanging Supabase client
     const timeoutPromise = new Promise<never>((_, reject) => {
