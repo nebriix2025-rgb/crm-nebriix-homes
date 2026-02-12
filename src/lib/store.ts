@@ -754,7 +754,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   // Data access with isolation (from cache)
   // All users can view all properties (CRM agents need visibility into all listings)
-  getPropertiesForUser: (userId, isAdmin) => {
+  getPropertiesForUser: (_userId, _isAdmin) => {
     const state = get();
     // All users can see all properties - this is a CRM where agents need full visibility
     return state.properties;
