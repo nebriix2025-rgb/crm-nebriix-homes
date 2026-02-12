@@ -104,7 +104,7 @@ interface PendingFile {
 
 export function DealsPage() {
   const { user, isAdmin } = useAuth();
-  const { properties, leads, users, addDeal, updateDeal, getDealsForUser, getUserById } = useAppStore();
+  const { properties, leads, users, addDeal, updateDeal, deleteDeal, getDealsForUser, getUserById } = useAppStore();
   const [statusFilter, setStatusFilter] = useState<DealStatus | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -267,15 +267,20 @@ export function DealsPage() {
     setIsViewDialogOpen(true);
   };
 
-  const handleDeleteDeal = async () => {
+  const handleDeleteDeal = async (permanent: boolean = false) => {
     if (!deletingDeal) return;
     try {
-      // For now, mark as cancelled instead of deleting
-      await updateDeal(deletingDeal.id, { status: 'cancelled' });
+      if (permanent) {
+        // Permanently delete the deal
+        await deleteDeal(deletingDeal.id);
+      } else {
+        // Mark as cancelled instead of deleting
+        await updateDeal(deletingDeal.id, { status: 'cancelled' });
+      }
       setDeletingDeal(null);
       setIsDeleteDialogOpen(false);
     } catch (error) {
-      console.error('Failed to cancel deal:', error);
+      console.error('Failed to delete/cancel deal:', error);
     }
   };
 
@@ -569,7 +574,7 @@ export function DealsPage() {
                                   className="text-red-400"
                                 >
                                   <Trash2 className="h-4 w-4 mr-2" />
-                                  Cancel Deal
+                                  Remove Deal
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -647,15 +652,17 @@ export function DealsPage() {
 
       {/* Add Deal Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
+        <DialogContent className="max-w-lg max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Handshake className="h-5 w-5 text-accent" />
               Create New Deal
             </DialogTitle>
           </DialogHeader>
-          {renderDealForm()}
-          <DialogFooter className="flex-col sm:flex-row gap-2">
+          <div className="flex-1 overflow-y-auto pr-2">
+            {renderDealForm()}
+          </div>
+          <DialogFooter className="flex-shrink-0 flex-col sm:flex-row gap-2 pt-4 border-t border-border">
             {(!formData.property_id || !formData.deal_value || !formData.closer_id) && (
               <p className="text-xs text-muted-foreground mr-auto">
                 * Fill in all required fields
@@ -677,15 +684,17 @@ export function DealsPage() {
 
       {/* Edit Deal Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
+        <DialogContent className="max-w-lg max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Pencil className="h-5 w-5 text-accent" />
               Edit Deal
             </DialogTitle>
           </DialogHeader>
-          {renderDealForm()}
-          <DialogFooter>
+          <div className="flex-1 overflow-y-auto pr-2">
+            {renderDealForm()}
+          </div>
+          <DialogFooter className="flex-shrink-0 pt-4 border-t border-border">
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
               Cancel
             </Button>
@@ -704,21 +713,34 @@ export function DealsPage() {
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-red-400">Cancel Deal</DialogTitle>
+            <DialogTitle className="text-red-400">Remove Deal</DialogTitle>
           </DialogHeader>
           <p className="text-muted-foreground">
-            Are you sure you want to cancel the deal for "{deletingDeal?.property?.title}"?
-            This will mark the deal as cancelled.
+            What would you like to do with the deal for "{deletingDeal?.property?.title}"?
           </p>
-          <DialogFooter>
+          <div className="space-y-2 pt-2">
+            <p className="text-sm text-muted-foreground">
+              <strong>Cancel:</strong> Mark as cancelled (can be restored)
+            </p>
+            <p className="text-sm text-muted-foreground">
+              <strong>Delete:</strong> Permanently remove (cannot be undone)
+            </p>
+          </div>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
               Keep Deal
             </Button>
             <Button
-              variant="destructive"
-              onClick={handleDeleteDeal}
+              variant="secondary"
+              onClick={() => handleDeleteDeal(false)}
             >
               Cancel Deal
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => handleDeleteDeal(true)}
+            >
+              Delete Permanently
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -649,6 +649,14 @@ export const dealService = {
 
       return fullDeal!;
     }
+  },
+
+  async delete(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('deals')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
   }
 };
 

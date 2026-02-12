@@ -54,6 +54,7 @@ interface AppState {
   setDeals: (deals: Deal[]) => void;
   addDeal: (deal: Omit<Deal, 'id' | 'created_at' | 'updated_at' | 'property' | 'lead' | 'closer' | 'commission_amount'>) => Promise<Deal>;
   updateDeal: (id: string, updates: Partial<Deal>) => Promise<Deal>;
+  deleteDeal: (id: string) => Promise<void>;
 
   // Activity Actions
   setActivities: (activities: Activity[]) => void;
@@ -456,6 +457,29 @@ export const useAppStore = create<AppState>((set, get) => ({
       return updatedDeal;
     } catch (error) {
       console.error('Error updating deal:', error);
+      throw error;
+    }
+  },
+
+  deleteDeal: async (id) => {
+    try {
+      const deal = get().deals.find(d => d.id === id);
+      await dealService.delete(id);
+
+      // Log audit
+      await auditLogService.create({
+        user_id: get().currentUserId || '',
+        action: 'deal_deleted',
+        entity_type: 'deal',
+        entity_id: id,
+        old_value: deal ? { property: deal.property?.title, value: deal.deal_value, status: deal.status } : undefined,
+      });
+
+      set((state) => ({
+        deals: state.deals.filter((d) => d.id !== id),
+      }));
+    } catch (error) {
+      console.error('Error deleting deal:', error);
       throw error;
     }
   },
