@@ -25,11 +25,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const fetchUserProfile = async (userId: string): Promise<boolean> => {
     console.log('fetchUserProfile called with userId:', userId);
     try {
-      const { data, error } = await supabase
+      // Use Promise.race with a timeout to prevent hanging
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 5000);
+      });
+
+      const fetchPromise = supabase
         .from('users')
         .select('*')
         .eq('id', userId)
         .single();
+
+      let data, error;
+      try {
+        const result = await Promise.race([fetchPromise, timeoutPromise]);
+        data = result.data;
+        error = result.error;
+      } catch (timeoutError) {
+        console.warn('Supabase client timeout, trying direct REST API...');
+        // Fallback to direct REST API call
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+        const response = await fetch(
+          `${supabaseUrl}/rest/v1/users?id=eq.${userId}&select=*`,
+          {
+            headers: {
+              'apikey': supabaseKey,
+              'Authorization': `Bearer ${supabaseKey}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
+        if (response.ok) {
+          const users = await response.json();
+          data = users[0] || null;
+          error = users.length === 0 ? { message: 'User not found' } : null;
+        } else {
+          error = { message: `REST API error: ${response.status}` };
+        }
+      }
 
       console.log('fetchUserProfile result:', { data, error });
 
