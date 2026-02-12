@@ -226,9 +226,15 @@ export const propertyService = {
   },
 
   async create(property: Omit<Property, 'id' | 'created_at' | 'updated_at' | 'creator'>): Promise<Property> {
-    // Remove only the computed/relation fields that don't exist in the database
-    // Keep videos and documents as they are valid JSONB columns
-    const { media, ...dbProperty } = property as any;
+    // Remove computed/relation fields and new fields that may not be in schema cache yet
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { media, videos, documents, is_offplan, ...dbProperty } = property as any;
+
+    // Add back the new fields only if they have values (to support gradual schema updates)
+    const propertyData: Record<string, unknown> = { ...dbProperty };
+    if (is_offplan !== undefined) propertyData.is_offplan = is_offplan;
+    if (videos && videos.length > 0) propertyData.videos = videos;
+    if (documents && documents.length > 0) propertyData.documents = documents;
 
     // Use Promise.race with timeout to prevent hanging Supabase client
     const timeoutPromise = new Promise<never>((_, reject) => {
@@ -237,7 +243,7 @@ export const propertyService = {
 
     const createPromise = supabase
       .from('properties')
-      .insert(dbProperty)
+      .insert(propertyData)
       .select(`
         *,
         creator:users!properties_created_by_fkey(id, full_name, email, role)
@@ -267,7 +273,7 @@ export const propertyService = {
           'Content-Type': 'application/json',
           'Prefer': 'return=representation'
         },
-        body: JSON.stringify(dbProperty)
+        body: JSON.stringify(propertyData)
       });
 
       if (!response.ok) {
@@ -300,9 +306,15 @@ export const propertyService = {
   },
 
   async update(id: string, updates: Partial<Property>): Promise<Property> {
-    // Remove only the computed/relation fields
-    // Keep videos and documents as they are valid JSONB columns
-    const { creator, media, ...cleanUpdates } = updates as any;
+    // Remove computed/relation fields and extract new fields separately
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { creator, media, videos, documents, is_offplan, ...cleanUpdates } = updates as any;
+
+    // Add back the new fields only if they are being explicitly updated
+    const updateData: Record<string, unknown> = { ...cleanUpdates };
+    if (is_offplan !== undefined) updateData.is_offplan = is_offplan;
+    if (videos !== undefined) updateData.videos = videos;
+    if (documents !== undefined) updateData.documents = documents;
 
     // Use Promise.race with timeout to prevent hanging Supabase client
     const timeoutPromise = new Promise<never>((_, reject) => {
@@ -311,7 +323,7 @@ export const propertyService = {
 
     const updatePromise = supabase
       .from('properties')
-      .update(cleanUpdates)
+      .update(updateData)
       .eq('id', id)
       .select(`
         *,
@@ -341,7 +353,7 @@ export const propertyService = {
           'Content-Type': 'application/json',
           'Prefer': 'return=representation'
         },
-        body: JSON.stringify(cleanUpdates)
+        body: JSON.stringify(updateData)
       });
 
       if (!response.ok) {
