@@ -118,7 +118,7 @@ export const propertyService = {
     return data || [];
   },
 
-  async getByUser(userId: string, isAdmin: boolean): Promise<Property[]> {
+  async getByUser(_userId: string, _isAdmin: boolean): Promise<Property[]> {
     // All users can see all published properties (requirement: Admin-Driven Content System)
     // Users see all published content, not just their own creations
     return this.getAll();
