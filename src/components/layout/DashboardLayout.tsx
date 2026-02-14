@@ -33,11 +33,11 @@ export function DashboardLayout() {
           <div className="relative">
             <div className="h-16 w-16 animate-spin rounded-full border-4 border-primary/30 border-t-primary" />
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-xl font-bold text-primary">N</span>
+              <span className="text-xl font-bold text-primary">N&H</span>
             </div>
           </div>
           <div className="text-center">
-            <h2 className="font-heading text-xl font-semibold text-foreground">Nebriix Homes</h2>
+            <h2 className="font-heading text-xl font-semibold text-foreground">N&H Homes</h2>
             <p className="text-sm text-muted-foreground mt-1">Loading your dashboard...</p>
           </div>
         </div>

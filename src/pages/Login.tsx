@@ -45,7 +45,7 @@ export function LoginPage() {
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
           {/* Logo */}
           <div>
-            <img src="/images/nebriix-logo.svg" alt="Nebriix Homes" className="h-24 w-auto" />
+            <img src="/images/nebriix-logo.svg" alt="N&H Homes" className="h-24 w-auto" />
           </div>
 
           {/* Features */}
@@ -95,7 +95,7 @@ export function LoginPage() {
 
           {/* Footer */}
           <p className="text-white/30 text-sm">
-            &copy; 2024 Nebriix Homes. All rights reserved.
+            &copy; 2025 N&H Homes. All rights reserved.
           </p>
         </div>
       </div>
@@ -106,7 +106,7 @@ export function LoginPage() {
           {/* Mobile Logo */}
           <div className="lg:hidden flex flex-col items-center mb-8">
             <div className="bg-sidebar rounded-2xl p-6">
-              <img src="/images/nebriix-logo.svg" alt="Nebriix Homes" className="h-20 w-auto" />
+              <img src="/images/nebriix-logo.svg" alt="N&H Homes" className="h-20 w-auto" />
             </div>
           </div>
 

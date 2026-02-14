@@ -61,7 +61,7 @@ export function MobileNav({ isOpen, onToggle }: MobileNavProps) {
             >
               {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
-            <img src="/images/nebriix-logo.svg" alt="Nebriix Homes" className="h-8 w-auto" />
+            <img src="/images/nebriix-logo.svg" alt="N&H Homes" className="h-8 w-auto" />
           </div>
 
           <div className="flex items-center gap-2">

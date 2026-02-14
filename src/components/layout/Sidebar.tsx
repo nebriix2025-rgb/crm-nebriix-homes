@@ -59,17 +59,13 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
         <div className="flex h-16 items-center justify-between border-b border-sidebar-border/40 px-4">
           {!collapsed && (
             <div className="flex items-center gap-2.5">
-              <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/20">
-                <span className="text-sm font-bold text-white">N</span>
-              </div>
-              <span className="font-heading text-base font-semibold text-sidebar-foreground hidden lg:block">Nebriix</span>
+              <img src="/favicon.svg" alt="N&H" className="h-8 w-8 rounded-xl shadow-lg shadow-primary/20" />
+              <span className="font-heading text-base font-semibold text-sidebar-foreground hidden lg:block">N&H Homes</span>
             </div>
           )}
           {collapsed && (
             <div className="flex items-center justify-center mx-auto">
-              <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/20">
-                <span className="text-sm font-bold text-white">N</span>
-              </div>
+              <img src="/favicon.svg" alt="N&H" className="h-8 w-8 rounded-xl shadow-lg shadow-primary/20" />
             </div>
           )}
           {onToggle && (
