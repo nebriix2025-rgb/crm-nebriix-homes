@@ -297,7 +297,7 @@ export function SettingsPage() {
         <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <User className="h-5 w-5 text-accent" />
+              <User className="h-5 w-5 text-primary" />
               Profile Settings
             </CardTitle>
             <CardDescription>
@@ -306,9 +306,9 @@ export function SettingsPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex items-center gap-6">
-              <Avatar className="h-20 w-20 border-2 border-accent/30">
+              <Avatar className="h-20 w-20 border-2 border-primary/30">
                 <AvatarImage src={user?.avatar_url} />
-                <AvatarFallback className="bg-accent/20 text-accent text-xl">
+                <AvatarFallback className="bg-primary/20 text-primary text-xl">
                   {user ? getInitials(user.full_name) : 'U'}
                 </AvatarFallback>
               </Avatar>
@@ -382,7 +382,7 @@ export function SettingsPage() {
               <Button
                 onClick={handleSaveProfile}
                 disabled={isSavingProfile}
-                className="bg-accent text-accent-foreground hover:bg-accent/90"
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 {isSavingProfile ? (
                   <>
@@ -404,7 +404,7 @@ export function SettingsPage() {
         <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <Shield className="h-5 w-5 text-accent" />
+              <Shield className="h-5 w-5 text-primary" />
               Security
             </CardTitle>
             <CardDescription>Manage your account security settings</CardDescription>
@@ -442,7 +442,7 @@ export function SettingsPage() {
         <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <Bell className="h-5 w-5 text-accent" />
+              <Bell className="h-5 w-5 text-primary" />
               Notification Preferences
             </CardTitle>
             <CardDescription>Control how you receive notifications</CardDescription>
@@ -484,7 +484,7 @@ export function SettingsPage() {
           <Card className="bg-card border-border">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <Users className="h-5 w-5 text-accent" />
+                <Users className="h-5 w-5 text-primary" />
                 Team Overview
               </CardTitle>
               <CardDescription>Quick view of your team members</CardDescription>
@@ -495,7 +495,7 @@ export function SettingsPage() {
                   <div key={member.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-10 w-10">
-                        <AvatarFallback className="bg-accent/20 text-accent">
+                        <AvatarFallback className="bg-primary/20 text-primary">
                           {getInitials(member.full_name)}
                         </AvatarFallback>
                       </Avatar>
@@ -531,7 +531,7 @@ export function SettingsPage() {
           <Card className="bg-card border-border">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <Building2 className="h-5 w-5 text-accent" />
+                <Building2 className="h-5 w-5 text-primary" />
                 Company Settings
               </CardTitle>
               <CardDescription>Manage your company information</CardDescription>
@@ -555,7 +555,7 @@ export function SettingsPage() {
                   <Input id="website" placeholder="https://nebriix.com" />
                 </div>
               </div>
-              <Button className="bg-accent text-accent-foreground hover:bg-accent/90">
+              <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
                 Save Company Settings
               </Button>
             </CardContent>
@@ -566,7 +566,7 @@ export function SettingsPage() {
         <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <Palette className="h-5 w-5 text-accent" />
+              <Palette className="h-5 w-5 text-primary" />
               Appearance
             </CardTitle>
             <CardDescription>Customize the look and feel of your dashboard</CardDescription>
@@ -595,7 +595,7 @@ export function SettingsPage() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-accent" />
+              <Shield className="h-5 w-5 text-primary" />
               Change Password
             </DialogTitle>
             <DialogDescription>
@@ -671,7 +671,7 @@ export function SettingsPage() {
             <Button
               onClick={handleChangePassword}
               disabled={isChangingPassword}
-              className="bg-accent text-accent-foreground hover:bg-accent/90"
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               {isChangingPassword ? (
                 <>

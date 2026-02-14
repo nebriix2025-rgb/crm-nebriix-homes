@@ -162,7 +162,7 @@ export function AnalyticsPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-accent mx-auto mb-4" />
+          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
           <p className="text-muted-foreground">Loading analytics...</p>
         </div>
       </div>
@@ -181,13 +181,13 @@ export function AnalyticsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Value Closed</p>
-                  <p className="text-2xl font-bold font-heading text-accent">{formatPrice(stats.total_value)}</p>
+                  <p className="text-2xl font-bold font-heading text-primary">{formatPrice(stats.total_value)}</p>
                   <p className="text-xs text-emerald-400 flex items-center gap-1 mt-1">
                     <TrendingUp className="h-3 w-3" /> +15% this month
                   </p>
                 </div>
-                <div className="p-3 rounded-xl bg-accent/10">
-                  <DollarSign className="h-6 w-6 text-accent" />
+                <div className="p-3 rounded-xl bg-primary/10">
+                  <DollarSign className="h-6 w-6 text-primary" />
                 </div>
               </div>
             </CardContent>
@@ -251,7 +251,7 @@ export function AnalyticsPage() {
           <Card className="bg-card border-border">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-accent" />
+                <Calendar className="h-5 w-5 text-primary" />
                 Activity Overview
               </CardTitle>
             </CardHeader>
@@ -314,7 +314,7 @@ export function AnalyticsPage() {
           <Card className="bg-card border-border">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <Building2 className="h-5 w-5 text-accent" />
+                <Building2 className="h-5 w-5 text-primary" />
                 Property Types
               </CardTitle>
             </CardHeader>
@@ -369,7 +369,7 @@ export function AnalyticsPage() {
           <Card className="bg-card border-border">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <DollarSign className="h-5 w-5 text-accent" />
+                <DollarSign className="h-5 w-5 text-primary" />
                 Deal Value Trend
               </CardTitle>
             </CardHeader>
@@ -403,7 +403,7 @@ export function AnalyticsPage() {
           <Card className="bg-card border-border">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <Users className="h-5 w-5 text-accent" />
+                <Users className="h-5 w-5 text-primary" />
                 Lead Pipeline
               </CardTitle>
             </CardHeader>
@@ -456,7 +456,7 @@ export function AnalyticsPage() {
                         </div>
                         <div className="h-2 bg-muted rounded-full overflow-hidden">
                           <div
-                            className="h-full bg-accent rounded-full"
+                            className="h-full bg-primary rounded-full"
                             style={{
                               width: `${(source.count / Math.max(...leadSourceData.map(s => s.count))) * 100}%`,
                             }}
@@ -482,7 +482,7 @@ export function AnalyticsPage() {
                 ) : (
                   topPerformers.map((performer, index) => (
                     <div key={performer.name} className="flex items-center gap-4">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-accent text-accent-foreground text-sm font-bold">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-bold">
                         {index + 1}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -492,7 +492,7 @@ export function AnalyticsPage() {
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-semibold text-accent">{formatPrice(performer.totalValue)}</p>
+                        <p className="text-sm font-semibold text-primary">{formatPrice(performer.totalValue)}</p>
                         <p className="text-xs text-emerald-400">+{formatPrice(performer.commission)} comm.</p>
                       </div>
                     </div>

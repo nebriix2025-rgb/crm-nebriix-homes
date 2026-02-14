@@ -39,7 +39,7 @@ const getNotificationIcon = (type: NotificationType) => {
     case 'lead_import':
       return <Users2 className="h-4 w-4 text-purple-500" />;
     case 'announcement':
-      return <BellRing className="h-4 w-4 text-accent" />;
+      return <BellRing className="h-4 w-4 text-primary" />;
     case 'user_created':
       return <UserPlus className="h-4 w-4 text-teal-500" />;
     case 'password_changed':
@@ -124,11 +124,11 @@ export function Header({ title, subtitle }: HeaderProps) {
 
   return (
     <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-16 items-center justify-between px-6">
+      <div className="flex h-14 sm:h-16 items-center justify-between px-3 sm:px-6">
         {/* Title */}
-        <div>
-          <h1 className="text-xl font-heading font-semibold">{title}</h1>
-          {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
+        <div className="min-w-0 flex-1 mr-2">
+          <h1 className="text-base sm:text-xl font-heading font-semibold truncate">{title}</h1>
+          {subtitle && <p className="text-xs sm:text-sm text-muted-foreground truncate">{subtitle}</p>}
         </div>
 
         {/* Actions */}
@@ -211,7 +211,7 @@ export function Header({ title, subtitle }: HeaderProps) {
                         key={notification.id}
                         className={cn(
                           "p-4 hover:bg-muted/50 transition-colors cursor-pointer relative",
-                          !notification.read && "bg-accent/5"
+                          !notification.read && "bg-primary/5"
                         )}
                         onClick={() => {
                           markNotificationRead(notification.id);
@@ -226,7 +226,7 @@ export function Header({ title, subtitle }: HeaderProps) {
                         }}
                       >
                         {!notification.read && (
-                          <div className="absolute left-1.5 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-accent" />
+                          <div className="absolute left-1.5 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-primary" />
                         )}
                         <div className="flex gap-3 pl-2">
                           <div className="shrink-0 w-9 h-9 rounded-full bg-muted flex items-center justify-center">
@@ -353,8 +353,8 @@ export function Header({ title, subtitle }: HeaderProps) {
                           setLocalSearch('');
                         }}
                       >
-                        <div className="w-10 h-10 rounded-lg bg-accent/20 flex items-center justify-center shrink-0">
-                          <Building2 className="h-5 w-5 text-accent" />
+                        <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center shrink-0">
+                          <Building2 className="h-5 w-5 text-primary" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-medium truncate">{property.title}</p>
@@ -384,7 +384,7 @@ export function Header({ title, subtitle }: HeaderProps) {
                         }}
                       >
                         <Avatar className="h-10 w-10">
-                          <AvatarFallback className="bg-accent/20 text-accent">
+                          <AvatarFallback className="bg-primary/20 text-primary">
                             {getInitials(lead.name)}
                           </AvatarFallback>
                         </Avatar>
@@ -416,7 +416,7 @@ export function Header({ title, subtitle }: HeaderProps) {
                         }}
                       >
                         <Avatar className="h-10 w-10">
-                          <AvatarFallback className="bg-accent/20 text-accent">
+                          <AvatarFallback className="bg-primary/20 text-primary">
                             {getInitials(user.full_name)}
                           </AvatarFallback>
                         </Avatar>

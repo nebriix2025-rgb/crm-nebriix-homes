@@ -31,9 +31,9 @@ export function DashboardLayout() {
       <div className="flex h-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-6">
           <div className="relative">
-            <div className="h-16 w-16 animate-spin rounded-full border-4 border-accent/30 border-t-accent" />
+            <div className="h-16 w-16 animate-spin rounded-full border-4 border-primary/30 border-t-primary" />
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-xl font-bold text-accent">N</span>
+              <span className="text-xl font-bold text-primary">N</span>
             </div>
           </div>
           <div className="text-center">

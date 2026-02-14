@@ -1,5 +1,8 @@
 import { create } from 'zustand';
-import type { Property, Lead, Deal, Activity, User, DashboardStats, AuditLog, Notification, Announcement } from '@/types';
+import type {
+  Property, Lead, Deal, Activity, User, DashboardStats, AuditLog, Notification, Announcement,
+  ReferralEarning, ReferralSummary, Reward, UserReward, UserRewardWithDetails
+} from '@/types';
 import {
   propertyService,
   leadService,
@@ -9,7 +12,10 @@ import {
   auditLogService,
   notificationService,
   announcementService,
-  statsService
+  statsService,
+  referralService,
+  rewardService,
+  userRewardService
 } from './database';
 
 interface AppState {
@@ -108,6 +114,25 @@ interface AppState {
   // Admin functions
   getUserActivitySummary: (userId: string) => { leads: number; properties: number; deals: number };
   getAuditLogs: (filters?: { userId?: string; entityType?: string; action?: string }) => AuditLog[];
+
+  // Referral State & Actions
+  referralEarnings: ReferralEarning[];
+  referralSummary: ReferralSummary | null;
+  loadReferralData: (userId: string) => Promise<void>;
+  getReferralSummary: (userId: string) => Promise<ReferralSummary>;
+
+  // Rewards State & Actions
+  rewards: Reward[];
+  userRewards: UserRewardWithDetails[];
+  loadRewards: (includeInactive?: boolean) => Promise<void>;
+  loadUserRewards: (userId: string) => Promise<void>;
+  addReward: (reward: Omit<Reward, 'id' | 'created_at' | 'updated_at' | 'creator'>) => Promise<Reward>;
+  updateReward: (id: string, updates: Partial<Reward>) => Promise<Reward>;
+  deleteReward: (id: string) => Promise<void>;
+  toggleRewardActive: (id: string, isActive: boolean) => Promise<Reward>;
+  grantUserReward: (userId: string, rewardId: string) => Promise<UserReward>;
+  fulfillUserReward: (id: string, fulfilledBy: string, notes?: string) => Promise<UserReward>;
+  getUserPointsBalance: (userId: string) => Promise<number>;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -120,6 +145,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   auditLogs: [],
   notifications: [],
   announcements: [],
+  referralEarnings: [],
+  referralSummary: null,
+  rewards: [],
+  userRewards: [],
   searchQuery: '',
   isLoading: false,
   error: null,
@@ -866,5 +895,217 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
 
     return logs;
+  },
+
+  // ============================================
+  // REFERRAL ACTIONS
+  // ============================================
+  loadReferralData: async (userId) => {
+    try {
+      const [earnings, summary] = await Promise.all([
+        referralService.getEarningsForUser(userId),
+        referralService.getSummary(userId),
+      ]);
+      set({ referralEarnings: earnings, referralSummary: summary });
+    } catch (error) {
+      console.error('Error loading referral data:', error);
+    }
+  },
+
+  getReferralSummary: async (userId) => {
+    try {
+      const summary = await referralService.getSummary(userId);
+      set({ referralSummary: summary });
+      return summary;
+    } catch (error) {
+      console.error('Error getting referral summary:', error);
+      return {
+        total_referrals: 0,
+        total_earnings_lifetime: 0,
+        total_earnings_this_month: 0,
+        referred_agents: [],
+      };
+    }
+  },
+
+  // ============================================
+  // REWARDS ACTIONS
+  // ============================================
+  loadRewards: async (includeInactive = false) => {
+    try {
+      const rewards = await rewardService.getAll(includeInactive);
+      set({ rewards });
+    } catch (error) {
+      console.error('Error loading rewards:', error);
+    }
+  },
+
+  loadUserRewards: async (userId) => {
+    try {
+      const userRewards = await userRewardService.getForUser(userId);
+      set({ userRewards });
+    } catch (error) {
+      console.error('Error loading user rewards:', error);
+    }
+  },
+
+  addReward: async (reward) => {
+    try {
+      const newReward = await rewardService.create(reward);
+
+      // Log audit
+      await auditLogService.create({
+        user_id: get().currentUserId || '',
+        action: 'reward_created',
+        entity_type: 'reward',
+        entity_id: newReward.id,
+        new_value: { title: newReward.title, category: newReward.category, points: newReward.points_required },
+      });
+
+      set((state) => ({
+        rewards: [...state.rewards, newReward],
+      }));
+
+      return newReward;
+    } catch (error) {
+      console.error('Error adding reward:', error);
+      throw error;
+    }
+  },
+
+  updateReward: async (id, updates) => {
+    try {
+      const oldReward = get().rewards.find(r => r.id === id);
+      const updatedReward = await rewardService.update(id, updates);
+
+      // Log audit
+      await auditLogService.create({
+        user_id: get().currentUserId || '',
+        action: 'reward_updated',
+        entity_type: 'reward',
+        entity_id: id,
+        old_value: oldReward ? { title: oldReward.title, is_active: oldReward.is_active } : undefined,
+        new_value: updates,
+      });
+
+      set((state) => ({
+        rewards: state.rewards.map(r => r.id === id ? updatedReward : r),
+      }));
+
+      return updatedReward;
+    } catch (error) {
+      console.error('Error updating reward:', error);
+      throw error;
+    }
+  },
+
+  deleteReward: async (id) => {
+    try {
+      const reward = get().rewards.find(r => r.id === id);
+      await rewardService.delete(id);
+
+      // Log audit
+      await auditLogService.create({
+        user_id: get().currentUserId || '',
+        action: 'reward_deleted',
+        entity_type: 'reward',
+        entity_id: id,
+        old_value: reward ? { title: reward.title, category: reward.category } : undefined,
+      });
+
+      set((state) => ({
+        rewards: state.rewards.filter(r => r.id !== id),
+      }));
+    } catch (error) {
+      console.error('Error deleting reward:', error);
+      throw error;
+    }
+  },
+
+  toggleRewardActive: async (id, isActive) => {
+    try {
+      const updatedReward = await rewardService.toggleActive(id, isActive);
+
+      // Log audit
+      await auditLogService.create({
+        user_id: get().currentUserId || '',
+        action: 'reward_toggled',
+        entity_type: 'reward',
+        entity_id: id,
+        new_value: { is_active: isActive },
+      });
+
+      set((state) => ({
+        rewards: state.rewards.map(r => r.id === id ? updatedReward : r),
+      }));
+
+      return updatedReward;
+    } catch (error) {
+      console.error('Error toggling reward:', error);
+      throw error;
+    }
+  },
+
+  grantUserReward: async (userId, rewardId) => {
+    try {
+      const userReward = await userRewardService.create({
+        user_id: userId,
+        reward_id: rewardId,
+        status: 'earned',
+        progress: 100,
+        earned_at: new Date().toISOString(),
+      });
+
+      // Log audit
+      await auditLogService.create({
+        user_id: get().currentUserId || '',
+        action: 'reward_granted',
+        entity_type: 'user_reward',
+        entity_id: userReward.id,
+        new_value: { user_id: userId, reward_id: rewardId },
+      });
+
+      set((state) => ({
+        userRewards: [...state.userRewards, userReward as UserRewardWithDetails],
+      }));
+
+      return userReward;
+    } catch (error) {
+      console.error('Error granting reward:', error);
+      throw error;
+    }
+  },
+
+  fulfillUserReward: async (id, fulfilledBy, notes) => {
+    try {
+      const userReward = await userRewardService.fulfill(id, fulfilledBy, notes);
+
+      // Log audit
+      await auditLogService.create({
+        user_id: get().currentUserId || '',
+        action: 'reward_fulfilled',
+        entity_type: 'user_reward',
+        entity_id: id,
+        new_value: { fulfilled_by: fulfilledBy, notes },
+      });
+
+      set((state) => ({
+        userRewards: state.userRewards.map(ur => ur.id === id ? userReward as UserRewardWithDetails : ur),
+      }));
+
+      return userReward;
+    } catch (error) {
+      console.error('Error fulfilling reward:', error);
+      throw error;
+    }
+  },
+
+  getUserPointsBalance: async (userId) => {
+    try {
+      return await userRewardService.getUserPointsBalance(userId);
+    } catch (error) {
+      console.error('Error getting points balance:', error);
+      return 0;
+    }
   },
 }));

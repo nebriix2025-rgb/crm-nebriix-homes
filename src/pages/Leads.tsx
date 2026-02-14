@@ -383,7 +383,7 @@ export function LeadsPage() {
       </div>
 
       <DialogFooter>
-        <Button type="submit" onClick={onSubmit} className="bg-accent text-accent-foreground hover:bg-accent/90">
+        <Button type="submit" onClick={onSubmit} className="bg-primary text-primary-foreground hover:bg-primary/90">
           {submitLabel}
         </Button>
       </DialogFooter>
@@ -421,7 +421,7 @@ export function LeadsPage() {
           <Card className="bg-card border-border">
             <CardContent className="p-4">
               <p className="text-sm text-muted-foreground">Conversion Rate</p>
-              <p className="text-2xl font-bold text-accent">{conversionRate}%</p>
+              <p className="text-2xl font-bold text-primary">{conversionRate}%</p>
             </CardContent>
           </Card>
         </div>
@@ -433,7 +433,7 @@ export function LeadsPage() {
               variant={viewMode === 'pipeline' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setViewMode('pipeline')}
-              className={viewMode === 'pipeline' ? 'bg-accent text-accent-foreground hover:bg-accent/90' : ''}
+              className={viewMode === 'pipeline' ? 'bg-primary text-primary-foreground hover:bg-primary/90' : ''}
             >
               Pipeline View
             </Button>
@@ -441,7 +441,7 @@ export function LeadsPage() {
               variant={viewMode === 'list' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setViewMode('list')}
-              className={viewMode === 'list' ? 'bg-accent text-accent-foreground hover:bg-accent/90' : ''}
+              className={viewMode === 'list' ? 'bg-primary text-primary-foreground hover:bg-primary/90' : ''}
             >
               List View
             </Button>
@@ -458,7 +458,7 @@ export function LeadsPage() {
             </div>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-accent text-accent-foreground hover:bg-accent/90" onClick={() => { resetForm(); setAddToStage('new'); }}>
+                <Button className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => { resetForm(); setAddToStage('new'); }}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add Lead
                 </Button>
@@ -513,12 +513,12 @@ export function LeadsPage() {
                         </div>
                       ) : (
                         stageLeads.map((lead) => (
-                          <Card key={lead.id} className="bg-muted/50 border-border hover:border-accent/50 transition-colors cursor-pointer">
+                          <Card key={lead.id} className="bg-muted/50 border-border hover:border-primary/50 transition-colors cursor-pointer">
                             <CardContent className="p-3">
                               <div className="flex items-start justify-between gap-2">
                                 <div className="flex items-center gap-2">
                                   <Avatar className="h-8 w-8">
-                                    <AvatarFallback className="text-xs bg-accent/20 text-accent">
+                                    <AvatarFallback className="text-xs bg-primary/20 text-primary">
                                       {getInitials(lead.name)}
                                     </AvatarFallback>
                                   </Avatar>
@@ -583,7 +583,7 @@ export function LeadsPage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="w-full border-2 border-dashed border-muted hover:border-accent/50"
+                        className="w-full border-2 border-dashed border-muted hover:border-primary/50"
                         onClick={() => openAddDialogForStage(stage.value)}
                       >
                         <UserPlus className="h-4 w-4 mr-2" />
@@ -607,13 +607,13 @@ export function LeadsPage() {
               </Card>
             ) : (
               filteredLeads.map((lead) => (
-                <Card key={lead.id} className="bg-card border-border hover:border-accent/50 transition-colors">
+                <Card key={lead.id} className="bg-card border-border hover:border-primary/50 transition-colors">
                   <CardContent className="p-6">
                     <div className="flex flex-col lg:flex-row lg:items-center gap-4">
                       {/* Lead Info */}
                       <div className="flex items-start gap-4 flex-1">
                         <Avatar className="h-12 w-12">
-                          <AvatarFallback className="bg-accent/20 text-accent">
+                          <AvatarFallback className="bg-primary/20 text-primary">
                             {getInitials(lead.name)}
                           </AvatarFallback>
                         </Avatar>
@@ -704,7 +704,7 @@ export function LeadsPage() {
                       {isAdmin && lead.created_by && (
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <Avatar className="h-5 w-5">
-                            <AvatarFallback className="text-[10px] bg-accent/20 text-accent">
+                            <AvatarFallback className="text-[10px] bg-primary/20 text-primary">
                               {getUserById(lead.created_by) ? getInitials(getUserById(lead.created_by)!.full_name) : 'U'}
                             </AvatarFallback>
                           </Avatar>

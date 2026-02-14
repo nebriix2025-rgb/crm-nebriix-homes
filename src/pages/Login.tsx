@@ -37,8 +37,8 @@ export function LoginPage() {
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-sidebar via-sidebar to-sidebar/90 relative overflow-hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-5">
-          <div className="absolute top-20 left-20 w-72 h-72 rounded-full bg-accent blur-3xl" />
-          <div className="absolute bottom-20 right-20 w-96 h-96 rounded-full bg-accent/50 blur-3xl" />
+          <div className="absolute top-20 left-20 w-72 h-72 rounded-full bg-primary blur-3xl" />
+          <div className="absolute bottom-20 right-20 w-96 h-96 rounded-full bg-primary/50 blur-3xl" />
         </div>
 
         {/* Content */}
@@ -53,7 +53,7 @@ export function LoginPage() {
             <div>
               <h2 className="font-heading text-4xl font-bold text-white leading-tight">
                 Manage Your<br />
-                <span className="text-accent">Real Estate</span><br />
+                <span className="text-primary">Real Estate</span><br />
                 Portfolio
               </h2>
               <p className="mt-4 text-white/60 max-w-md">
@@ -64,8 +64,8 @@ export function LoginPage() {
 
             <div className="grid gap-4">
               <div className="flex items-center gap-3 text-white/80">
-                <div className="h-10 w-10 rounded-lg bg-accent/20 flex items-center justify-center">
-                  <Sparkles className="h-5 w-5 text-accent" />
+                <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                  <Sparkles className="h-5 w-5 text-primary" />
                 </div>
                 <div>
                   <p className="font-medium">Premium Properties</p>
@@ -73,8 +73,8 @@ export function LoginPage() {
                 </div>
               </div>
               <div className="flex items-center gap-3 text-white/80">
-                <div className="h-10 w-10 rounded-lg bg-accent/20 flex items-center justify-center">
-                  <User className="h-5 w-5 text-accent" />
+                <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                  <User className="h-5 w-5 text-primary" />
                 </div>
                 <div>
                   <p className="font-medium">Lead Management</p>
@@ -82,8 +82,8 @@ export function LoginPage() {
                 </div>
               </div>
               <div className="flex items-center gap-3 text-white/80">
-                <div className="h-10 w-10 rounded-lg bg-accent/20 flex items-center justify-center">
-                  <Shield className="h-5 w-5 text-accent" />
+                <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                  <Shield className="h-5 w-5 text-primary" />
                 </div>
                 <div>
                   <p className="font-medium">Secure & Reliable</p>
@@ -162,7 +162,7 @@ export function LoginPage() {
 
             <Button
               type="submit"
-              className="w-full h-11 bg-accent text-accent-foreground hover:bg-accent/90 font-semibold"
+              className="w-full h-11 bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
               disabled={isLoading}
             >
               {isLoading ? (

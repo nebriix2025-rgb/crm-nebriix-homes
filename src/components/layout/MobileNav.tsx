@@ -11,6 +11,8 @@ import {
   X,
   UserCog,
   ScrollText,
+  Trophy,
+  Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -23,8 +25,11 @@ const navItems = [
   { icon: Handshake, label: 'Deals', href: '/dashboard/deals', roles: ['admin', 'user'] },
   { icon: Building2, label: 'Properties', href: '/dashboard/properties', roles: ['admin', 'user'] },
   { icon: Users2, label: 'Leads', href: '/dashboard/leads', roles: ['admin', 'user'] },
+  { icon: Trophy, label: 'Rewards', href: '/dashboard/rewards', roles: ['admin', 'user'] },
+  { icon: Users, label: 'Referrals', href: '/dashboard/referrals', roles: ['admin', 'user'] },
   { icon: BarChart3, label: 'Analytics', href: '/dashboard/analytics', roles: ['admin'] },
   { icon: UserCog, label: 'Users', href: '/dashboard/users', roles: ['admin'] },
+  { icon: Trophy, label: 'Manage Rewards', href: '/dashboard/rewards-admin', roles: ['admin'] },
   { icon: ScrollText, label: 'Audit Log', href: '/dashboard/audit-log', roles: ['admin'] },
   { icon: Settings, label: 'Settings', href: '/dashboard/settings', roles: ['admin', 'user'] },
 ];
@@ -60,9 +65,9 @@ export function MobileNav({ isOpen, onToggle }: MobileNavProps) {
           </div>
 
           <div className="flex items-center gap-2">
-            <Avatar className="h-8 w-8 border border-accent/30">
+            <Avatar className="h-8 w-8 border border-primary/30">
               <AvatarImage src={user?.avatar_url} />
-              <AvatarFallback className="bg-accent/10 text-accent text-xs font-semibold">
+              <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
                 {user ? getInitials(user.full_name) : 'U'}
               </AvatarFallback>
             </Avatar>
@@ -104,17 +109,17 @@ export function MobileNav({ isOpen, onToggle }: MobileNavProps) {
                   className={cn(
                     'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200',
                     isActive
-                      ? 'bg-gradient-to-r from-accent/20 to-accent/10 text-accent shadow-sm border border-accent/20'
+                      ? 'bg-gradient-to-r from-primary/20 to-primary/10 text-primary shadow-sm border border-primary/20'
                       : 'text-sidebar-foreground/70 hover:bg-sidebar-border/50 hover:text-sidebar-foreground'
                   )}
                 >
                   <Icon className={cn(
                     'h-5 w-5 shrink-0 transition-colors',
-                    isActive ? 'text-accent' : 'group-hover:text-accent'
+                    isActive ? 'text-primary' : 'group-hover:text-primary'
                   )} />
                   <span>{item.label}</span>
                   {isActive && (
-                    <div className="ml-auto h-2 w-2 rounded-full bg-accent animate-pulse" />
+                    <div className="ml-auto h-2 w-2 rounded-full bg-primary animate-pulse" />
                   )}
                 </NavLink>
               );
@@ -124,15 +129,15 @@ export function MobileNav({ isOpen, onToggle }: MobileNavProps) {
           {/* User Profile */}
           <div className="border-t border-sidebar-border p-4">
             <div className="flex items-center gap-3">
-              <Avatar className="h-10 w-10 border-2 border-accent/30 ring-2 ring-accent/10">
+              <Avatar className="h-10 w-10 border-2 border-primary/30 ring-2 ring-primary/10">
                 <AvatarImage src={user?.avatar_url} />
-                <AvatarFallback className="bg-gradient-to-br from-accent/20 to-accent/10 text-accent font-semibold">
+                <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary font-semibold">
                   {user ? getInitials(user.full_name) : 'U'}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold truncate">{user?.full_name}</p>
-                <p className="text-xs text-accent capitalize">{user?.role}</p>
+                <p className="text-xs text-primary capitalize">{user?.role}</p>
               </div>
               <Button
                 variant="ghost"

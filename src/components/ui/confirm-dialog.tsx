@@ -49,7 +49,7 @@ export function ConfirmDialog({
       case 'warning':
         return 'bg-amber-500 text-white hover:bg-amber-500/90';
       default:
-        return 'bg-accent text-accent-foreground hover:bg-accent/90';
+        return 'bg-primary text-primary-foreground hover:bg-primary/90';
     }
   };
 

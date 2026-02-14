@@ -9,6 +9,9 @@ import { SettingsPage } from './pages/Settings';
 import { UsersPage } from './pages/Users';
 import { AuditLogPage } from './pages/AuditLog';
 import { LoginPage } from './pages/Login';
+import Rewards from './pages/Rewards';
+import Referrals from './pages/Referrals';
+import RewardsAdmin from './pages/RewardsAdmin';
 import { useAuth } from './contexts/AuthContext';
 
 function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles?: string[] }) {
@@ -30,6 +33,16 @@ function App() {
         <Route path="deals" element={<DealsPage />} />
         <Route path="properties" element={<PropertiesPage />} />
         <Route path="leads" element={<LeadsPage />} />
+        <Route path="rewards" element={<Rewards />} />
+        <Route path="referrals" element={<Referrals />} />
+        <Route
+          path="rewards-admin"
+          element={
+            <ProtectedRoute roles={['admin']}>
+              <RewardsAdmin />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="analytics"
           element={

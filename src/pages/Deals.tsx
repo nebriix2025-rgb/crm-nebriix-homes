@@ -415,7 +415,7 @@ export function DealsPage() {
         <div className="space-y-2">
           {pendingFiles.map((file) => (
             <div key={file.id} className="flex items-center gap-3 p-2 rounded-lg bg-muted/50 group">
-              <FileText className="h-5 w-5 text-accent shrink-0" />
+              <FileText className="h-5 w-5 text-primary shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm truncate">{file.name}</p>
                 <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
@@ -429,7 +429,7 @@ export function DealsPage() {
               </button>
             </div>
           ))}
-          <label className="flex items-center gap-2 p-3 rounded-lg border-2 border-dashed border-border hover:border-accent/50 cursor-pointer transition-colors">
+          <label className="flex items-center gap-2 p-3 rounded-lg border-2 border-dashed border-border hover:border-primary/50 cursor-pointer transition-colors">
             <Upload className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">Upload files (contracts, documents, etc.)</span>
             <input
@@ -469,7 +469,7 @@ export function DealsPage() {
           <Card className="bg-card border-border">
             <CardContent className="p-4">
               <p className="text-sm text-muted-foreground">Total Value</p>
-              <p className="text-2xl font-bold text-accent">{formatPrice(totalValue)}</p>
+              <p className="text-2xl font-bold text-primary">{formatPrice(totalValue)}</p>
             </CardContent>
           </Card>
           <Card className="bg-card border-border">
@@ -489,7 +489,7 @@ export function DealsPage() {
                 variant={statusFilter === filter.value ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setStatusFilter(filter.value)}
-                className={statusFilter === filter.value ? 'bg-accent text-accent-foreground hover:bg-accent/90' : ''}
+                className={statusFilter === filter.value ? 'bg-primary text-primary-foreground hover:bg-primary/90' : ''}
               >
                 {filter.label}
               </Button>
@@ -507,7 +507,7 @@ export function DealsPage() {
             </div>
             {isAdmin && (
               <Button
-                className="bg-accent text-accent-foreground hover:bg-accent/90"
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
                 onClick={() => {
                   setFormData(initialFormData);
                   setIsAddDialogOpen(true);
@@ -531,13 +531,13 @@ export function DealsPage() {
             </Card>
           ) : (
             filteredDeals.map((deal) => (
-              <Card key={deal.id} className="bg-card border-border hover:border-accent/50 transition-colors">
+              <Card key={deal.id} className="bg-card border-border hover:border-primary/50 transition-colors">
                 <CardContent className="p-6">
                   <div className="flex flex-col lg:flex-row lg:items-center gap-4">
                     {/* Property Info */}
                     <div className="flex items-start gap-4 flex-1">
-                      <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-accent/20 to-accent/5 flex items-center justify-center shrink-0">
-                        <Building2 className="h-8 w-8 text-accent/70" />
+                      <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shrink-0">
+                        <Building2 className="h-8 w-8 text-primary/70" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
@@ -595,7 +595,7 @@ export function DealsPage() {
                         <p className="text-xs text-muted-foreground flex items-center gap-1">
                           <DollarSign className="h-3 w-3" /> Deal Value
                         </p>
-                        <p className="font-semibold text-accent">{formatPrice(deal.deal_value)}</p>
+                        <p className="font-semibold text-primary">{formatPrice(deal.deal_value)}</p>
                       </div>
                       <div>
                         <p className="text-xs text-muted-foreground flex items-center gap-1">
@@ -625,7 +625,7 @@ export function DealsPage() {
                     {isAdmin && deal.created_by && (
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <Avatar className="h-5 w-5">
-                          <AvatarFallback className="text-[10px] bg-accent/20 text-accent">
+                          <AvatarFallback className="text-[10px] bg-primary/20 text-primary">
                             {getUserById(deal.created_by) ? getInitials(getUserById(deal.created_by)!.full_name) : 'U'}
                           </AvatarFallback>
                         </Avatar>
@@ -655,7 +655,7 @@ export function DealsPage() {
         <DialogContent className="max-w-lg max-h-[90vh] flex flex-col">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
-              <Handshake className="h-5 w-5 text-accent" />
+              <Handshake className="h-5 w-5 text-primary" />
               Create New Deal
             </DialogTitle>
           </DialogHeader>
@@ -674,7 +674,7 @@ export function DealsPage() {
             <Button
               onClick={handleAddDeal}
               disabled={!formData.property_id || !formData.deal_value || !formData.closer_id || isUploading}
-              className="bg-accent text-accent-foreground hover:bg-accent/90"
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               {isUploading ? 'Uploading...' : 'Create Deal'}
             </Button>
@@ -687,7 +687,7 @@ export function DealsPage() {
         <DialogContent className="max-w-lg max-h-[90vh] flex flex-col">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
-              <Pencil className="h-5 w-5 text-accent" />
+              <Pencil className="h-5 w-5 text-primary" />
               Edit Deal
             </DialogTitle>
           </DialogHeader>
@@ -701,7 +701,7 @@ export function DealsPage() {
             <Button
               onClick={handleEditDeal}
               disabled={!formData.property_id || !formData.deal_value || !formData.closer_id}
-              className="bg-accent text-accent-foreground hover:bg-accent/90"
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               Save Changes
             </Button>
@@ -751,7 +751,7 @@ export function DealsPage() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Handshake className="h-5 w-5 text-accent" />
+              <Handshake className="h-5 w-5 text-primary" />
               Deal Details
             </DialogTitle>
           </DialogHeader>
@@ -770,7 +770,7 @@ export function DealsPage() {
               {/* Property Info */}
               <div className="p-4 rounded-lg bg-muted/30 border border-border">
                 <h4 className="font-semibold mb-3 flex items-center gap-2">
-                  <Building2 className="h-4 w-4 text-accent" />
+                  <Building2 className="h-4 w-4 text-primary" />
                   Property
                 </h4>
                 <div className="space-y-2">
@@ -788,7 +788,7 @@ export function DealsPage() {
               {viewingDeal.lead && (
                 <div className="p-4 rounded-lg bg-muted/30 border border-border">
                   <h4 className="font-semibold mb-3 flex items-center gap-2">
-                    <User className="h-4 w-4 text-accent" />
+                    <User className="h-4 w-4 text-primary" />
                     Client
                   </h4>
                   <div className="grid grid-cols-2 gap-4 text-sm">
@@ -814,12 +814,12 @@ export function DealsPage() {
 
               {/* Financial Details */}
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 rounded-lg bg-accent/10 border border-accent/20">
+                <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
                   <div className="flex items-center gap-2 mb-1">
-                    <DollarSign className="h-4 w-4 text-accent" />
+                    <DollarSign className="h-4 w-4 text-primary" />
                     <p className="text-sm text-muted-foreground">Deal Value</p>
                   </div>
-                  <p className="text-2xl font-bold text-accent">{formatPrice(viewingDeal.deal_value)}</p>
+                  <p className="text-2xl font-bold text-primary">{formatPrice(viewingDeal.deal_value)}</p>
                 </div>
                 <div className="p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
                   <div className="flex items-center gap-2 mb-1">
@@ -835,7 +835,7 @@ export function DealsPage() {
                 <h4 className="font-semibold mb-3">Assigned Agent (Closer)</h4>
                 <div className="flex items-center gap-3">
                   <Avatar className="h-10 w-10">
-                    <AvatarFallback className="bg-accent/20 text-accent">
+                    <AvatarFallback className="bg-primary/20 text-primary">
                       {viewingDeal.closer ? getInitials(viewingDeal.closer.full_name) : 'U'}
                     </AvatarFallback>
                   </Avatar>
@@ -858,13 +858,13 @@ export function DealsPage() {
               {viewingDeal.attachments && viewingDeal.attachments.length > 0 && (
                 <div>
                   <h4 className="font-semibold mb-3 flex items-center gap-2">
-                    <Paperclip className="h-4 w-4 text-accent" />
+                    <Paperclip className="h-4 w-4 text-primary" />
                     Attachments ({viewingDeal.attachments.length})
                   </h4>
                   <div className="space-y-2">
                     {viewingDeal.attachments.map((attachment) => (
                       <div key={attachment.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                        <FileText className="h-5 w-5 text-accent shrink-0" />
+                        <FileText className="h-5 w-5 text-primary shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">{attachment.name}</p>
                           <p className="text-xs text-muted-foreground">{formatFileSize(attachment.size)}</p>
@@ -906,7 +906,7 @@ export function DealsPage() {
                 setIsViewDialogOpen(false);
                 if (viewingDeal) openEditDialog(viewingDeal);
               }}
-              className="bg-accent text-accent-foreground hover:bg-accent/90"
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               <Pencil className="h-4 w-4 mr-2" />
               Edit Deal

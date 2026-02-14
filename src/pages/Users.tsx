@@ -417,7 +417,7 @@ export function UsersPage() {
               resetForm();
               setShowAddDialog(true);
             }}
-            className="bg-accent text-accent-foreground hover:bg-accent/90"
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <Plus className="h-4 w-4 mr-2" />
             Add User
@@ -448,7 +448,7 @@ export function UsersPage() {
                           <div className="flex items-center gap-3">
                             <Avatar className="h-10 w-10">
                               <AvatarImage src={user.avatar_url} />
-                              <AvatarFallback className="bg-accent/20 text-accent">
+                              <AvatarFallback className="bg-primary/20 text-primary">
                                 {getInitials(user.full_name)}
                               </AvatarFallback>
                             </Avatar>
@@ -635,7 +635,7 @@ export function UsersPage() {
               <Button type="button" variant="outline" onClick={resetForm}>
                 Cancel
               </Button>
-              <Button type="submit" className="bg-accent text-accent-foreground hover:bg-accent/90">
+              <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/90">
                 {editingUser ? 'Update User' : 'Create User'}
               </Button>
             </DialogFooter>
@@ -653,7 +653,7 @@ export function UsersPage() {
             <div className="space-y-6">
               <div className="flex items-center gap-4">
                 <Avatar className="h-16 w-16">
-                  <AvatarFallback className="bg-accent/20 text-accent text-xl">
+                  <AvatarFallback className="bg-primary/20 text-primary text-xl">
                     {getInitials(viewingUser.full_name)}
                   </AvatarFallback>
                 </Avatar>
@@ -731,7 +731,7 @@ export function UsersPage() {
                   setViewingUser(null);
                 }
               }}
-              className="bg-accent text-accent-foreground hover:bg-accent/90"
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               Edit User
             </Button>
@@ -768,7 +768,7 @@ export function UsersPage() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Key className="h-5 w-5 text-accent" />
+              <Key className="h-5 w-5 text-primary" />
               Change Password
             </DialogTitle>
             <DialogDescription>
@@ -818,7 +818,7 @@ export function UsersPage() {
             )}
             <Button
               onClick={handleChangePassword}
-              className="bg-accent text-accent-foreground hover:bg-accent/90"
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
               disabled={newPassword.length < 8 || isChangingPassword}
             >
               {isChangingPassword ? 'Changing...' : 'Change Password'}

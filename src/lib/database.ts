@@ -1,5 +1,9 @@
 import { supabase } from './supabase';
-import type { Property, Lead, Deal, Activity, User, AuditLog, Notification, Announcement } from '@/types';
+import type {
+  Property, Lead, Deal, Activity, User, AuditLog, Notification, Announcement,
+  ReferralEarning, ReferralSummary, ReferredAgent,
+  Reward, UserReward, UserRewardWithDetails
+} from '@/types';
 
 // ============================================
 // USER OPERATIONS
@@ -850,6 +854,301 @@ export const announcementService = {
       .from('announcements')
       .delete()
       .eq('id', id);
+    if (error) throw error;
+  }
+};
+
+// ============================================
+// REFERRAL EARNINGS OPERATIONS
+// ============================================
+export const referralService = {
+  async getEarningsForUser(userId: string): Promise<ReferralEarning[]> {
+    const { data, error } = await supabase
+      .from('referral_earnings')
+      .select(`
+        *,
+        referrer:users!referral_earnings_referrer_id_fkey(id, full_name, email, avatar_url),
+        referred_agent:users!referral_earnings_referred_agent_id_fkey(id, full_name, email, avatar_url),
+        deal:deals(id, deal_value, commission_amount, status)
+      `)
+      .eq('referrer_id', userId)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getReferredAgents(userId: string): Promise<ReferredAgent[]> {
+    // Get all users referred by this user
+    const { data: referredUsers, error: usersError } = await supabase
+      .from('users')
+      .select('id, full_name, email, avatar_url, status, created_at')
+      .eq('referred_by', userId);
+    if (usersError) throw usersError;
+
+    if (!referredUsers || referredUsers.length === 0) return [];
+
+    // For each referred user, get their deals count and earnings generated
+    const referredAgents: ReferredAgent[] = await Promise.all(
+      referredUsers.map(async (user) => {
+        // Get closed deals count
+        const { count: dealsCount } = await supabase
+          .from('deals')
+          .select('*', { count: 'exact', head: true })
+          .eq('closer_id', user.id)
+          .eq('status', 'closed');
+
+        // Get total earnings generated for the referrer from this agent
+        const { data: earnings } = await supabase
+          .from('referral_earnings')
+          .select('earning_amount')
+          .eq('referrer_id', userId)
+          .eq('referred_agent_id', user.id);
+
+        const totalEarnings = earnings?.reduce((sum, e) => sum + Number(e.earning_amount), 0) || 0;
+
+        return {
+          id: user.id,
+          full_name: user.full_name,
+          email: user.email,
+          avatar_url: user.avatar_url,
+          status: user.status,
+          deals_closed: dealsCount || 0,
+          total_earnings_generated: totalEarnings,
+          joined_at: user.created_at,
+        };
+      })
+    );
+
+    return referredAgents;
+  },
+
+  async getSummary(userId: string): Promise<ReferralSummary> {
+    const referredAgents = await this.getReferredAgents(userId);
+
+    // Get all earnings
+    const { data: allEarnings } = await supabase
+      .from('referral_earnings')
+      .select('earning_amount, created_at')
+      .eq('referrer_id', userId);
+
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const totalLifetime = allEarnings?.reduce((sum, e) => sum + Number(e.earning_amount), 0) || 0;
+    const totalThisMonth = allEarnings
+      ?.filter(e => new Date(e.created_at) >= startOfMonth)
+      .reduce((sum, e) => sum + Number(e.earning_amount), 0) || 0;
+
+    return {
+      total_referrals: referredAgents.length,
+      total_earnings_lifetime: totalLifetime,
+      total_earnings_this_month: totalThisMonth,
+      referred_agents: referredAgents,
+    };
+  },
+
+  async createEarning(earning: Omit<ReferralEarning, 'id' | 'created_at' | 'referrer' | 'referred_agent' | 'deal'>): Promise<ReferralEarning> {
+    const { data, error } = await supabase
+      .from('referral_earnings')
+      .insert(earning)
+      .select(`
+        *,
+        referrer:users!referral_earnings_referrer_id_fkey(id, full_name, email, avatar_url),
+        referred_agent:users!referral_earnings_referred_agent_id_fkey(id, full_name, email, avatar_url),
+        deal:deals(id, deal_value, commission_amount, status)
+      `)
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async getAllEarnings(): Promise<ReferralEarning[]> {
+    const { data, error } = await supabase
+      .from('referral_earnings')
+      .select(`
+        *,
+        referrer:users!referral_earnings_referrer_id_fkey(id, full_name, email, avatar_url),
+        referred_agent:users!referral_earnings_referred_agent_id_fkey(id, full_name, email, avatar_url),
+        deal:deals(id, deal_value, commission_amount, status)
+      `)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  }
+};
+
+// ============================================
+// REWARDS OPERATIONS
+// ============================================
+export const rewardService = {
+  async getAll(includeInactive = false): Promise<Reward[]> {
+    let query = supabase
+      .from('rewards')
+      .select(`
+        *,
+        creator:users!rewards_created_by_fkey(id, full_name, email)
+      `)
+      .order('sort_order', { ascending: true });
+
+    if (!includeInactive) {
+      query = query.eq('is_active', true);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getById(id: string): Promise<Reward | null> {
+    const { data, error } = await supabase
+      .from('rewards')
+      .select(`
+        *,
+        creator:users!rewards_created_by_fkey(id, full_name, email)
+      `)
+      .eq('id', id)
+      .single();
+    if (error) return null;
+    return data;
+  },
+
+  async create(reward: Omit<Reward, 'id' | 'created_at' | 'updated_at' | 'creator'>): Promise<Reward> {
+    const { data, error } = await supabase
+      .from('rewards')
+      .insert(reward)
+      .select(`
+        *,
+        creator:users!rewards_created_by_fkey(id, full_name, email)
+      `)
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async update(id: string, updates: Partial<Reward>): Promise<Reward> {
+    const { creator, ...cleanUpdates } = updates as any;
+    const { data, error } = await supabase
+      .from('rewards')
+      .update(cleanUpdates)
+      .eq('id', id)
+      .select(`
+        *,
+        creator:users!rewards_created_by_fkey(id, full_name, email)
+      `)
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async delete(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('rewards')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+  },
+
+  async toggleActive(id: string, isActive: boolean): Promise<Reward> {
+    return this.update(id, { is_active: isActive });
+  }
+};
+
+// ============================================
+// USER REWARDS OPERATIONS
+// ============================================
+export const userRewardService = {
+  async getForUser(userId: string): Promise<UserRewardWithDetails[]> {
+    const { data, error } = await supabase
+      .from('user_rewards')
+      .select(`
+        *,
+        reward:rewards(*),
+        user:users!user_rewards_user_id_fkey(id, full_name, email, avatar_url),
+        fulfiller:users!user_rewards_fulfilled_by_fkey(id, full_name, email)
+      `)
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getAll(): Promise<UserReward[]> {
+    const { data, error } = await supabase
+      .from('user_rewards')
+      .select(`
+        *,
+        reward:rewards(*),
+        user:users!user_rewards_user_id_fkey(id, full_name, email, avatar_url),
+        fulfiller:users!user_rewards_fulfilled_by_fkey(id, full_name, email)
+      `)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  },
+
+  async create(userReward: Omit<UserReward, 'id' | 'created_at' | 'updated_at' | 'user' | 'reward' | 'fulfiller'>): Promise<UserReward> {
+    const { data, error } = await supabase
+      .from('user_rewards')
+      .insert(userReward)
+      .select(`
+        *,
+        reward:rewards(*),
+        user:users!user_rewards_user_id_fkey(id, full_name, email, avatar_url)
+      `)
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async update(id: string, updates: Partial<UserReward>): Promise<UserReward> {
+    const { user, reward, fulfiller, ...cleanUpdates } = updates as any;
+    const { data, error } = await supabase
+      .from('user_rewards')
+      .update(cleanUpdates)
+      .eq('id', id)
+      .select(`
+        *,
+        reward:rewards(*),
+        user:users!user_rewards_user_id_fkey(id, full_name, email, avatar_url),
+        fulfiller:users!user_rewards_fulfilled_by_fkey(id, full_name, email)
+      `)
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async fulfill(id: string, fulfilledBy: string, notes?: string): Promise<UserReward> {
+    return this.update(id, {
+      status: 'fulfilled',
+      fulfilled_at: new Date().toISOString(),
+      fulfilled_by: fulfilledBy,
+      notes,
+    });
+  },
+
+  async delete(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('user_rewards')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+  },
+
+  async getUserPointsBalance(userId: string): Promise<number> {
+    const { data, error } = await supabase
+      .from('users')
+      .select('points_balance')
+      .eq('id', userId)
+      .single();
+    if (error) return 0;
+    return data?.points_balance || 0;
+  },
+
+  async updateUserPoints(userId: string, points: number): Promise<void> {
+    const { error } = await supabase
+      .from('users')
+      .update({ points_balance: points })
+      .eq('id', userId);
     if (error) throw error;
   }
 };

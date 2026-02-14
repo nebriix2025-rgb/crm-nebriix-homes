@@ -88,3 +88,12 @@ export function getRoleBadgeVariant(role: string): 'default' | 'secondary' | 'de
   };
   return variants[role] || 'outline';
 }
+
+export function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat('en-AE', {
+    style: 'currency',
+    currency: 'AED',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+}

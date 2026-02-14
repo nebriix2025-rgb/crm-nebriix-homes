@@ -151,8 +151,8 @@ export function AuditLogPage() {
           <Card className="bg-card border-border">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-accent/10">
-                  <ScrollText className="h-5 w-5 text-accent" />
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <ScrollText className="h-5 w-5 text-primary" />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Total Logs</p>
@@ -212,7 +212,7 @@ export function AuditLogPage() {
         <Card className="bg-card border-border">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
-              <Filter className="h-5 w-5 text-accent" />
+              <Filter className="h-5 w-5 text-primary" />
               Filters
             </CardTitle>
           </CardHeader>
@@ -298,8 +298,8 @@ export function AuditLogPage() {
         <Card className="bg-card border-border gold-border">
           <CardHeader className="pb-3 flex flex-row items-center justify-between">
             <CardTitle className="text-lg flex items-center gap-2">
-              <div className="p-2 rounded-lg bg-accent/10">
-                <ScrollText className="h-5 w-5 text-accent" />
+              <div className="p-2 rounded-lg bg-primary/10">
+                <ScrollText className="h-5 w-5 text-primary" />
               </div>
               Activity Log
               <Badge variant="outline" className="ml-2">
@@ -324,11 +324,11 @@ export function AuditLogPage() {
                   return (
                     <div
                       key={log.id}
-                      className="p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-all duration-200 border border-transparent hover:border-accent/20"
+                      className="p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-all duration-200 border border-transparent hover:border-primary/20"
                     >
                       <div className="flex items-start gap-4">
-                        <Avatar className="h-10 w-10 shrink-0 border-2 border-accent/20">
-                          <AvatarFallback className="bg-gradient-to-br from-accent/20 to-accent/5 text-accent text-sm font-semibold">
+                        <Avatar className="h-10 w-10 shrink-0 border-2 border-primary/20">
+                          <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/5 text-primary text-sm font-semibold">
                             {log.user ? getInitials(log.user.full_name) : 'S'}
                           </AvatarFallback>
                         </Avatar>
@@ -361,7 +361,7 @@ export function AuditLogPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => toggleExpand(log.id)}
-                                className="mt-2 h-7 text-xs text-accent hover:text-accent/80"
+                                className="mt-2 h-7 text-xs text-primary hover:text-primary/80"
                               >
                                 {isExpanded ? (
                                   <>

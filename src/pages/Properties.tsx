@@ -553,7 +553,7 @@ export function PropertiesPage() {
         {/* Image Upload */}
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <Image className="h-4 w-4 text-accent" />
+            <Image className="h-4 w-4 text-primary" />
             <Label className="text-sm">Images</Label>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -571,7 +571,7 @@ export function PropertiesPage() {
                 </button>
               </div>
             ))}
-            <label className="w-20 h-20 rounded-lg border-2 border-dashed border-border hover:border-accent/50 flex flex-col items-center justify-center cursor-pointer transition-colors">
+            <label className="w-20 h-20 rounded-lg border-2 border-dashed border-border hover:border-primary/50 flex flex-col items-center justify-center cursor-pointer transition-colors">
               <Upload className="h-5 w-5 text-muted-foreground" />
               <span className="text-[10px] text-muted-foreground mt-1">Add</span>
               <input
@@ -665,7 +665,7 @@ export function PropertiesPage() {
           type="submit"
           onClick={onSubmit}
           disabled={isUploading}
-          className="bg-accent text-accent-foreground hover:bg-accent/90"
+          className="bg-primary text-primary-foreground hover:bg-primary/90"
         >
           {isUploading ? 'Uploading...' : submitLabel}
         </Button>
@@ -718,7 +718,7 @@ export function PropertiesPage() {
                 variant={statusFilter === filter.value ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setStatusFilter(filter.value)}
-                className={statusFilter === filter.value ? 'bg-accent text-accent-foreground hover:bg-accent/90' : ''}
+                className={statusFilter === filter.value ? 'bg-primary text-primary-foreground hover:bg-primary/90' : ''}
               >
                 {filter.label}
               </Button>
@@ -737,7 +737,7 @@ export function PropertiesPage() {
             {isAdmin && (
               <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button className="bg-accent text-accent-foreground hover:bg-accent/90" onClick={() => resetForm()}>
+                  <Button className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => resetForm()}>
                     <Plus className="h-4 w-4 mr-2" />
                     Add Property
                   </Button>
@@ -774,7 +774,7 @@ export function PropertiesPage() {
           <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <Building2 className="h-5 w-5 text-accent" />
+                <Building2 className="h-5 w-5 text-primary" />
                 {viewingProperty?.title}
               </DialogTitle>
               <DialogDescription>
@@ -803,27 +803,27 @@ export function PropertiesPage() {
                       {viewingProperty.location}
                     </div>
                   </div>
-                  <p className="text-2xl font-bold text-accent">{formatPrice(viewingProperty.price)}</p>
+                  <p className="text-2xl font-bold text-primary">{formatPrice(viewingProperty.price)}</p>
                 </div>
 
                 {/* Property Details Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                   {viewingProperty.bedrooms && (
                     <div className="p-3 rounded-lg bg-muted/50 text-center">
-                      <Bed className="h-5 w-5 mx-auto mb-1 text-accent" />
+                      <Bed className="h-5 w-5 mx-auto mb-1 text-primary" />
                       <p className="text-lg font-semibold">{viewingProperty.bedrooms}</p>
                       <p className="text-xs text-muted-foreground">Bedrooms</p>
                     </div>
                   )}
                   {viewingProperty.bathrooms && (
                     <div className="p-3 rounded-lg bg-muted/50 text-center">
-                      <Bath className="h-5 w-5 mx-auto mb-1 text-accent" />
+                      <Bath className="h-5 w-5 mx-auto mb-1 text-primary" />
                       <p className="text-lg font-semibold">{viewingProperty.bathrooms}</p>
                       <p className="text-xs text-muted-foreground">Bathrooms</p>
                     </div>
                   )}
                   <div className="p-3 rounded-lg bg-muted/50 text-center">
-                    <Maximize2 className="h-5 w-5 mx-auto mb-1 text-accent" />
+                    <Maximize2 className="h-5 w-5 mx-auto mb-1 text-primary" />
                     <p className="text-lg font-semibold">{viewingProperty.area_sqft.toLocaleString()}</p>
                     <p className="text-xs text-muted-foreground">Sq Ft</p>
                   </div>
@@ -860,7 +860,7 @@ export function PropertiesPage() {
                   {viewingProperty.images && viewingProperty.images.filter(img => img && img.trim()).length > 0 ? (
                     <div>
                       <div className="flex items-center gap-2 mb-2">
-                        <Image className="h-4 w-4 text-accent" />
+                        <Image className="h-4 w-4 text-primary" />
                         <span className="text-sm font-medium">Images ({viewingProperty.images.filter(img => img && img.trim()).length})</span>
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
@@ -1021,7 +1021,7 @@ export function PropertiesPage() {
                   return (
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
-                        <Handshake className="h-4 w-4 text-accent" />
+                        <Handshake className="h-4 w-4 text-primary" />
                         <h4 className="font-semibold">Related Deals ({propertyDeals.length})</h4>
                       </div>
                       <div className="space-y-2">
@@ -1041,8 +1041,8 @@ export function PropertiesPage() {
                                 </div>
                                 <div className="flex items-center gap-4 text-sm">
                                   <span className="flex items-center gap-1">
-                                    <DollarSign className="h-3 w-3 text-accent" />
-                                    <span className="font-semibold text-accent">{formatPrice(deal.deal_value)}</span>
+                                    <DollarSign className="h-3 w-3 text-primary" />
+                                    <span className="font-semibold text-primary">{formatPrice(deal.deal_value)}</span>
                                   </span>
                                   <span className="text-muted-foreground">
                                     Commission: {formatPrice(deal.commission_amount || 0)} ({deal.commission_rate}%)
@@ -1051,7 +1051,7 @@ export function PropertiesPage() {
                                 {deal.closer && (
                                   <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
                                     <Avatar className="h-5 w-5">
-                                      <AvatarFallback className="text-[10px] bg-accent/20 text-accent">
+                                      <AvatarFallback className="text-[10px] bg-primary/20 text-primary">
                                         {getInitials(deal.closer.full_name)}
                                       </AvatarFallback>
                                     </Avatar>
@@ -1075,7 +1075,7 @@ export function PropertiesPage() {
                       return (
                         <>
                           <Avatar className="h-6 w-6">
-                            <AvatarFallback className="text-xs bg-accent/20 text-accent">
+                            <AvatarFallback className="text-xs bg-primary/20 text-primary">
                               {creator ? getInitials(creator.full_name) : 'U'}
                             </AvatarFallback>
                           </Avatar>
@@ -1101,7 +1101,7 @@ export function PropertiesPage() {
                     setIsViewDialogOpen(false);
                     if (viewingProperty) openEditDialog(viewingProperty);
                   }}
-                  className="bg-accent text-accent-foreground hover:bg-accent/90"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   <Edit className="h-4 w-4 mr-2" />
                   Edit Property
@@ -1122,9 +1122,9 @@ export function PropertiesPage() {
         ) : (
           <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
             {filteredProperties.map((property) => (
-              <Card key={property.id} className="bg-card border-border overflow-hidden hover:border-accent/50 transition-colors group">
+              <Card key={property.id} className="bg-card border-border overflow-hidden hover:border-primary/50 transition-colors group">
                 {/* Property Image */}
-                <div className="h-48 bg-gradient-to-br from-accent/20 to-accent/5 flex items-center justify-center relative overflow-hidden">
+                <div className="h-48 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center relative overflow-hidden">
                   {property.images && property.images.length > 0 ? (
                     <img
                       src={property.images[0]}
@@ -1137,7 +1137,7 @@ export function PropertiesPage() {
                       }}
                     />
                   ) : null}
-                  <Building2 className={`h-16 w-16 text-accent/40 absolute ${property.images && property.images.length > 0 ? 'hidden' : ''}`} />
+                  <Building2 className={`h-16 w-16 text-primary/40 absolute ${property.images && property.images.length > 0 ? 'hidden' : ''}`} />
                   <div className="absolute top-3 left-3 flex flex-col gap-1">
                     <Badge className={statusColors[property.status]}>
                       {statusLabels[property.status]}
@@ -1226,7 +1226,7 @@ export function PropertiesPage() {
                         return (
                           <>
                             <Avatar className="h-5 w-5">
-                              <AvatarFallback className="text-[10px] bg-accent/20 text-accent">
+                              <AvatarFallback className="text-[10px] bg-primary/20 text-primary">
                                 {creator ? getInitials(creator.full_name) : 'U'}
                               </AvatarFallback>
                             </Avatar>
@@ -1243,7 +1243,7 @@ export function PropertiesPage() {
                   )}
 
                   <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
-                    <p className="text-xl font-bold text-accent">{formatPrice(property.price)}</p>
+                    <p className="text-xl font-bold text-primary">{formatPrice(property.price)}</p>
                     <Button size="sm" variant="outline" onClick={() => openViewDialog(property)}>
                       View Details
                     </Button>

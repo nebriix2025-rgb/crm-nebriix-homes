@@ -207,3 +207,81 @@ export interface Announcement {
   created_at: string;
   expires_at?: string;
 }
+
+// Referral Earnings Types
+export type ReferralEarningType = 'signup_fee' | 'commission_share';
+
+export interface ReferralEarning {
+  id: string;
+  referrer_id: string;
+  referrer?: User;
+  referred_agent_id: string;
+  referred_agent?: User;
+  deal_id?: string;
+  deal?: Deal;
+  earning_type: ReferralEarningType;
+  earning_amount: number;
+  description?: string;
+  created_at: string;
+}
+
+export interface ReferredAgent {
+  id: string;
+  full_name: string;
+  email: string;
+  avatar_url?: string;
+  status: UserStatus;
+  deals_closed: number;
+  total_earnings_generated: number;
+  joined_at: string;
+}
+
+export interface ReferralSummary {
+  total_referrals: number;
+  total_earnings_lifetime: number;
+  total_earnings_this_month: number;
+  referred_agents: ReferredAgent[];
+}
+
+// Rewards Types
+export type RewardCategory = 'cash_bonus' | 'gift_voucher' | 'experience' | 'recognition_badge';
+export type RewardCriteriaType = 'points' | 'deals_closed' | 'revenue_earned' | 'leads_converted' | 'manual';
+export type UserRewardStatus = 'locked' | 'available' | 'earned' | 'fulfilled';
+
+export interface Reward {
+  id: string;
+  title: string;
+  description?: string;
+  image_url?: string;
+  points_required: number;
+  category: RewardCategory;
+  criteria_type?: RewardCriteriaType;
+  criteria_value?: number;
+  is_active: boolean;
+  sort_order: number;
+  created_by?: string;
+  creator?: User;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserReward {
+  id: string;
+  user_id: string;
+  user?: User;
+  reward_id: string;
+  reward?: Reward;
+  status: UserRewardStatus;
+  progress: number;
+  earned_at?: string;
+  fulfilled_at?: string;
+  fulfilled_by?: string;
+  fulfiller?: User;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserRewardWithDetails extends UserReward {
+  reward: Reward;
+}
