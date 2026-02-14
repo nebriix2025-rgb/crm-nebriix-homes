@@ -1,4 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200" fill="none">
+  <defs>
+    <linearGradient id="gold-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#c9a227"/>
+      <stop offset="40%" style="stop-color:#d4af37"/>
+      <stop offset="70%" style="stop-color:#e6c35c"/>
+      <stop offset="100%" style="stop-color:#d4af37"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="200" rx="16" fill="url(#gold-bg)"/>
   <text x="200" y="100" text-anchor="middle" font-family="'Brush Script MT', 'Segoe Script', cursive" font-size="80" font-weight="bold" fill="white" letter-spacing="2">Nebriix</text>
   <line x1="80" y1="115" x2="320" y2="115" stroke="white" stroke-width="2" stroke-linecap="round"/>
   <text x="200" y="160" text-anchor="middle" font-family="'Playfair Display', Georgia, serif" font-size="50" font-weight="bold" font-style="italic" fill="white" letter-spacing="6">Homes</text>
