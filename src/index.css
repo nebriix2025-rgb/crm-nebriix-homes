@@ -6,86 +6,86 @@
 
 @layer base {
   :root {
-    /* Nebriix Brand — Deep Navy + Warm Gold */
-    --background: 220 20% 97%;
-    --foreground: 0 0% 20%;
+    /* Nebriix Brand — Warm Cream + Rich Gold (matches nebriixhomes.com) */
+    --background: 36 33% 96%;
+    --foreground: 30 10% 18%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 20%;
+    --card: 40 33% 99%;
+    --card-foreground: 30 10% 18%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 20%;
+    --popover: 40 33% 99%;
+    --popover-foreground: 30 10% 18%;
 
-    --primary: 42 96% 59%;
-    --primary-foreground: 214 53% 12%;
+    --primary: 40 65% 54%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 93%;
-    --secondary-foreground: 0 0% 20%;
+    --secondary: 36 20% 91%;
+    --secondary-foreground: 30 10% 25%;
 
-    --muted: 220 12% 93%;
-    --muted-foreground: 0 0% 47%;
+    --muted: 36 18% 92%;
+    --muted-foreground: 30 6% 48%;
 
-    --accent: 220 14% 93%;
-    --accent-foreground: 0 0% 20%;
+    --accent: 36 18% 92%;
+    --accent-foreground: 30 10% 18%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 14% 88%;
-    --input: 220 14% 88%;
-    --ring: 42 96% 59%;
+    --border: 36 16% 87%;
+    --input: 36 16% 87%;
+    --ring: 40 65% 54%;
 
     --radius: 0.75rem;
 
-    /* Sidebar - Deep Navy */
-    --sidebar-background: 214 53% 12%;
-    --sidebar-foreground: 220 15% 92%;
-    --sidebar-accent: 42 96% 59%;
-    --sidebar-border: 213 46% 19%;
+    /* Sidebar - Deep Charcoal (matches nebriixhomes.com dark sections) */
+    --sidebar-background: 0 0% 17%;
+    --sidebar-foreground: 36 20% 92%;
+    --sidebar-accent: 40 65% 54%;
+    --sidebar-border: 0 0% 24%;
 
     /* Chart palette */
-    --chart-1: 42 96% 59%;
+    --chart-1: 40 65% 54%;
     --chart-2: 160 50% 45%;
-    --chart-3: 19 100% 60%;
+    --chart-3: 19 80% 55%;
     --chart-4: 220 60% 55%;
     --chart-5: 280 50% 55%;
   }
 
   .dark {
-    /* Nebriix Dark — Deep Navy + Gold glow */
-    --background: 214 53% 7%;
-    --foreground: 220 15% 92%;
+    /* Nebriix Dark — Charcoal + Gold glow */
+    --background: 0 0% 10%;
+    --foreground: 36 20% 92%;
 
-    --card: 214 50% 11%;
-    --card-foreground: 220 15% 92%;
+    --card: 0 0% 14%;
+    --card-foreground: 36 20% 92%;
 
-    --popover: 214 50% 11%;
-    --popover-foreground: 220 15% 92%;
+    --popover: 0 0% 14%;
+    --popover-foreground: 36 20% 92%;
 
-    --primary: 42 96% 59%;
-    --primary-foreground: 214 53% 7%;
+    --primary: 40 65% 54%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 213 40% 16%;
-    --secondary-foreground: 220 15% 85%;
+    --secondary: 0 0% 18%;
+    --secondary-foreground: 36 15% 85%;
 
-    --muted: 213 35% 16%;
+    --muted: 0 0% 18%;
     --muted-foreground: 0 0% 55%;
 
-    --accent: 213 35% 20%;
-    --accent-foreground: 220 15% 92%;
+    --accent: 0 0% 20%;
+    --accent-foreground: 36 20% 92%;
 
     --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 213 40% 18%;
-    --input: 213 40% 16%;
-    --ring: 42 96% 59%;
+    --border: 0 0% 22%;
+    --input: 0 0% 18%;
+    --ring: 40 65% 54%;
 
-    /* Sidebar - Near black navy */
-    --sidebar-background: 214 55% 6%;
-    --sidebar-foreground: 220 15% 90%;
-    --sidebar-accent: 42 96% 59%;
-    --sidebar-border: 213 46% 12%;
+    /* Sidebar - Near black charcoal */
+    --sidebar-background: 0 0% 8%;
+    --sidebar-foreground: 36 15% 90%;
+    --sidebar-accent: 40 65% 54%;
+    --sidebar-border: 0 0% 15%;
   }
 }
 
@@ -115,26 +115,26 @@
 
   /* Gradient utilities */
   .gold-gradient {
-    @apply bg-gradient-to-r from-[#c9960a] via-[#FBBF33] to-[#FFD666];
+    @apply bg-gradient-to-r from-[#9A7B3A] via-[#C9A84C] to-[#DBBF66];
   }
 
   .navy-gradient {
-    @apply bg-gradient-to-br from-[#1A2E47] via-[#0F1C30] to-[#0a1322];
+    @apply bg-gradient-to-br from-[#3A3A3A] via-[#2D2D2D] to-[#1F1F1F];
   }
 
   /* Premium card shadow */
   .premium-shadow {
     box-shadow:
-      0 1px 2px hsla(214, 53%, 12%, 0.04),
-      0 4px 16px hsla(214, 53%, 12%, 0.06),
-      0 0 0 1px hsla(214, 53%, 12%, 0.04);
+      0 1px 2px hsla(30, 10%, 15%, 0.04),
+      0 4px 16px hsla(30, 10%, 15%, 0.06),
+      0 0 0 1px hsla(30, 10%, 15%, 0.04);
   }
 
   .premium-shadow-lg {
     box-shadow:
-      0 2px 4px hsla(214, 53%, 12%, 0.04),
-      0 8px 32px hsla(214, 53%, 12%, 0.08),
-      0 0 0 1px hsla(42, 96%, 59%, 0.06);
+      0 2px 4px hsla(30, 10%, 15%, 0.04),
+      0 8px 32px hsla(30, 10%, 15%, 0.08),
+      0 0 0 1px hsla(40, 65%, 54%, 0.06);
   }
 
   .dark .premium-shadow {
@@ -169,12 +169,12 @@
 
   /* Sidebar glass effect */
   .sidebar-glass {
-    background: hsla(214, 53%, 12%, 0.97);
+    background: hsla(0, 0%, 17%, 0.97);
     backdrop-filter: blur(20px);
   }
 
   .dark .sidebar-glass {
-    background: hsla(214, 55%, 6%, 0.97);
+    background: hsla(0, 0%, 8%, 0.97);
   }
 
   /* Sparkline chart */
@@ -217,9 +217,9 @@
     padding: 1px;
     background: linear-gradient(
       135deg,
-      #FBBF33 0%,
-      #FF7433 50%,
-      #FBBF33 100%
+      #C9A84C 0%,
+      #9A7B3A 50%,
+      #C9A84C 100%
     );
     background-size: 200% 200%;
     animation: gradient-shift 3s ease infinite;
@@ -263,7 +263,7 @@
     background: linear-gradient(
       90deg,
       transparent 0%,
-      hsla(42, 96%, 59%, 0.06) 50%,
+      hsla(40, 65%, 54%, 0.06) 50%,
       transparent 100%
     );
     background-size: 200% 100%;
@@ -272,11 +272,11 @@
 
   /* Glow effects */
   .glow-primary {
-    box-shadow: 0 0 20px hsla(42, 96%, 59%, 0.15), 0 0 40px hsla(42, 96%, 59%, 0.05);
+    box-shadow: 0 0 20px hsla(40, 65%, 54%, 0.15), 0 0 40px hsla(40, 65%, 54%, 0.05);
   }
 
   .dark .glow-primary {
-    box-shadow: 0 0 20px hsla(42, 96%, 59%, 0.2), 0 0 40px hsla(42, 96%, 59%, 0.08);
+    box-shadow: 0 0 20px hsla(40, 65%, 54%, 0.2), 0 0 40px hsla(40, 65%, 54%, 0.08);
   }
 }
 
