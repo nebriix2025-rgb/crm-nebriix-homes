@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Header } from '@/components/layout/Header';
 import { useAppStore } from '@/lib/store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -64,12 +64,19 @@ function formatActionLabel(action: string): string {
 }
 
 export function AuditLogPage() {
-  const { auditLogs, users } = useAppStore();
+  const { auditLogs, users, loadAuditLogs } = useAppStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedUser, setSelectedUser] = useState<string>('all');
   const [selectedEntity, setSelectedEntity] = useState<string>('all');
   const [selectedAction, setSelectedAction] = useState<string>('all');
   const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set());
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Load audit logs from database on mount
+  useEffect(() => {
+    setIsLoading(true);
+    loadAuditLogs().finally(() => setIsLoading(false));
+  }, [loadAuditLogs]);
 
   const filteredLogs = useMemo(() => {
     let logs = auditLogs;
@@ -115,6 +122,12 @@ export function AuditLogPage() {
     setSelectedUser('all');
     setSelectedEntity('all');
     setSelectedAction('all');
+  };
+
+  const handleRefresh = async () => {
+    setIsLoading(true);
+    await loadAuditLogs();
+    setIsLoading(false);
   };
 
   const exportToCSV = () => {
@@ -282,8 +295,10 @@ export function AuditLogPage() {
                 <Label>&nbsp;</Label>
                 <div className="flex gap-2">
                   <Button variant="outline" onClick={clearFilters} className="flex-1">
-                    <RefreshCw className="h-4 w-4 mr-2" />
                     Clear
+                  </Button>
+                  <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
+                    <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
                   </Button>
                   <Button variant="outline" onClick={exportToCSV}>
                     <Download className="h-4 w-4" />
@@ -309,7 +324,12 @@ export function AuditLogPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {filteredLogs.length === 0 ? (
+              {isLoading ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <RefreshCw className="h-12 w-12 mx-auto mb-3 opacity-20 animate-spin" />
+                  <p>Loading audit logs...</p>
+                </div>
+              ) : filteredLogs.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <ScrollText className="h-12 w-12 mx-auto mb-3 opacity-20" />
                   <p>No audit logs found</p>
