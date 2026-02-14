@@ -45,7 +45,7 @@ export function LoginPage() {
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
           {/* Logo */}
           <div>
-            <img src="/images/nebriix-logo.svg" alt="Nebriix Homes" className="h-24 w-auto" />
+            <img src="/images/nebriix-logo-gold.png" alt="Nebriix Homes" className="h-24 w-auto rounded-xl" />
           </div>
 
           {/* Features */}
@@ -105,7 +105,7 @@ export function LoginPage() {
         <div className="w-full max-w-md space-y-8">
           {/* Mobile Logo */}
           <div className="lg:hidden flex flex-col items-center mb-8">
-            <img src="/images/nebriix-logo-gold.svg" alt="Nebriix Homes" className="h-24 w-auto rounded-2xl" />
+            <img src="/images/nebriix-logo-gold.png" alt="Nebriix Homes" className="h-24 w-auto rounded-2xl" />
           </div>
 
           {/* Welcome Text */}
