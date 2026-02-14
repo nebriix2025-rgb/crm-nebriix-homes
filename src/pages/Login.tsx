@@ -44,8 +44,9 @@ export function LoginPage() {
         {/* Content */}
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
           {/* Logo */}
-          <div>
-            <img src="/images/nebriix-logo-gold.png" alt="Nebriix Homes" className="h-24 w-auto rounded-xl" />
+          <div className="flex flex-col items-start">
+            <img src="/images/nebriix-logo-transparent.png" alt="Nebriix" className="h-16 w-auto" />
+            <span className="text-white font-serif font-bold italic text-2xl tracking-widest ml-4 -mt-1">Homes</span>
           </div>
 
           {/* Features */}
