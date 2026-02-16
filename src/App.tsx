@@ -9,6 +9,7 @@ import { SettingsPage } from './pages/Settings';
 import { UsersPage } from './pages/Users';
 import { AuditLogPage } from './pages/AuditLog';
 import { LoginPage } from './pages/Login';
+import { ResetPasswordPage } from './pages/ResetPassword';
 import Rewards from './pages/Rewards';
 import Referrals from './pages/Referrals';
 import RewardsAdmin from './pages/RewardsAdmin';
@@ -72,6 +73,7 @@ function App() {
 
       {/* Login Route */}
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
 
       {/* Default redirects */}
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
