@@ -1,4 +1,5 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Header } from '@/components/layout/Header';
 import { useAppStore } from '@/lib/store';
 import { useAuth } from '@/contexts/AuthContext';
@@ -101,6 +102,7 @@ const propertyTypes: PropertyType[] = ['apartment', 'villa', 'townhouse', 'penth
 export function PropertiesPage() {
   const { user, isAdmin } = useAuth();
   const { addProperty, deleteProperty, updateProperty, archiveProperty, getPropertiesForUser, getUserById, deals } = useAppStore();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [statusFilter, setStatusFilter] = useState<PropertyStatus | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -359,6 +361,20 @@ export function PropertiesPage() {
 
   // Get properties based on user role - users only see their own data
   const userProperties = user ? getPropertiesForUser(user.id, isAdmin) : [];
+
+  // Auto-open view dialog when navigated with ?view=propertyId
+  useEffect(() => {
+    const viewId = searchParams.get('view');
+    if (viewId && userProperties.length > 0) {
+      const property = userProperties.find(p => p.id === viewId);
+      if (property) {
+        setViewingProperty(property);
+        setIsViewDialogOpen(true);
+        searchParams.delete('view');
+        setSearchParams(searchParams, { replace: true });
+      }
+    }
+  }, [searchParams, userProperties]);
 
   const filteredProperties = userProperties.filter((property) => {
     const matchesStatus = statusFilter === 'all' || property.status === statusFilter;
@@ -1124,7 +1140,7 @@ export function PropertiesPage() {
             {filteredProperties.map((property) => (
               <Card key={property.id} className="bg-card border-border overflow-hidden hover:border-primary/50 transition-colors group">
                 {/* Property Image */}
-                <div className="h-48 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center relative overflow-hidden">
+                <div className="h-48 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center relative overflow-hidden cursor-pointer" onClick={() => openViewDialog(property)}>
                   {property.images && property.images.length > 0 ? (
                     <img
                       src={property.images[0]}
@@ -1157,7 +1173,7 @@ export function PropertiesPage() {
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold truncate">{property.title}</p>
+                      <p className="font-semibold truncate cursor-pointer hover:text-primary transition-colors" onClick={() => openViewDialog(property)}>{property.title}</p>
                       <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
                         <MapPin className="h-3 w-3" />
                         {property.location}

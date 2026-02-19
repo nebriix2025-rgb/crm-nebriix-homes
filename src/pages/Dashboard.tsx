@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Header } from '@/components/layout/Header';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppStore } from '@/lib/store';
@@ -99,6 +99,7 @@ const leadStatusLabels: Record<string, string> = {
 };
 
 export function DashboardPage() {
+  const navigate = useNavigate();
   const { user, isAdmin } = useAuth();
   const {
     loadInitialData,
@@ -347,10 +348,22 @@ export function DashboardPage() {
                   recentProperties.map((property) => (
                     <div
                       key={property.id}
+                      onClick={() => navigate(`/dashboard/properties?view=${property.id}`)}
                       className="flex items-start gap-3 p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-all duration-200 cursor-pointer group"
                     >
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center shrink-0">
-                        <Building2 className="h-5 w-5 text-primary/60" />
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center shrink-0 overflow-hidden">
+                        {property.images && property.images.length > 0 ? (
+                          <img
+                            src={property.images[0]}
+                            alt={property.title}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              (e.currentTarget.nextElementSibling as HTMLElement)?.classList.remove('hidden');
+                            }}
+                          />
+                        ) : null}
+                        <Building2 className={`h-5 w-5 text-primary/60 ${property.images && property.images.length > 0 ? 'hidden' : ''}`} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
